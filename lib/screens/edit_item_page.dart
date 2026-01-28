@@ -31,6 +31,7 @@ class EditItemPage extends StatefulWidget {
 class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMixin {
   int _currentStep = 0;
   int _totalSteps = 3;
+  // RESTORED: Celebration Controller
   late AnimationController _celebrationController;
   late Animation<double> _scaleAnimation;
   
@@ -38,6 +39,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
 
   bool _isNameError = false;
   bool _isPriceError = false;
+  // RESTORED: Celebration Flag
   bool _showCelebration = false;
   
   bool _isDeletingCategory = false; 
@@ -78,6 +80,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    // RESTORED: Animation Setup
     _celebrationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _celebrationController, curve: Curves.elasticOut));
     
@@ -125,6 +128,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
 
   @override
   void dispose() { 
+    // RESTORED: Dispose Animation Controller
     _celebrationController.dispose(); 
     _nameController.dispose(); 
     _priceController.dispose(); 
@@ -222,10 +226,15 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       setState(() { _isNameError = _nameController.text.trim().isEmpty; _isPriceError = _priceController.text.isEmpty; });
       if (_isNameError || _isPriceError) { HapticFeedback.heavyImpact(); return; }
     }
-    if (_currentStep < _totalSteps - 1) setState(() => _currentStep++);
-    else _triggerCelebrationAndSave();
+    if (_currentStep < _totalSteps - 1) {
+      setState(() => _currentStep++);
+    } else {
+      // RESTORED: Trigger Animation instead of saving instantly
+      _triggerCelebrationAndSave();
+    }
   }
 
+  // RESTORED: The method to trigger the animation
   void _triggerCelebrationAndSave() {
     FocusScope.of(context).unfocus();
     setState(() => _showCelebration = true);
@@ -386,7 +395,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
     final colors = Theme.of(context).colorScheme;
     
     bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    Color inputFillColor = isDarkMode ? Colors.grey[900]! : Colors.white;
+    Color inputFillColor = isDarkMode ? Colors.grey[850]! : Colors.white;
     Color inputBorderColor = isDarkMode ? Colors.transparent : Colors.grey.withOpacity(0.2);
     
     _totalSteps = 3;
@@ -406,6 +415,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
           Expanded(child: ElevatedButton(onPressed: _nextStep, style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: _juzyColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))), child: Text(isLastStep ? T.get('save') + " ✨" : T.get('next'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)))),
         ])),
       ]))),
+      // RESTORED: Celebration Overlay Stack
       if (_showCelebration) Positioned.fill(child: IgnorePointer(child: Container(color: Colors.black.withOpacity(0.1), child: Center(child: ScaleTransition(scale: _scaleAnimation, child: _imagePath != null ? Container(width: 150, height: 150, decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), image: DecorationImage(image: FileImage(File(_imagePath!)), fit: BoxFit.cover))) : Text(_emoji ?? "📦", style: const TextStyle(fontSize: 150, decoration: TextDecoration.none)))))))
     ]);
   }
@@ -445,7 +455,6 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
               avatar: _isDeletingCategory 
                 ? (isStandard ? null : const Icon(Icons.remove_circle, color: Colors.white, size: 18))
                 : Text(emoji),
-              // FIX: Besserer Chip-Kontrast
               backgroundColor: _isDeletingCategory 
                 ? (isStandard ? Colors.grey.withOpacity(0.1) : Colors.red) 
                 : (isSelected ? _juzyColor : colors.surfaceContainerHighest),
@@ -471,10 +480,8 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       ]), 
 
       const SizedBox(height: 40), 
-      // FIX: Größere Schrift für Name
       TextField(controller: _nameController, textCapitalization: TextCapitalization.sentences, textInputAction: TextInputAction.next, onSubmitted: (_) => FocusScope.of(context).requestFocus(_priceFocusNode), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), decoration: InputDecoration(labelText: T.get('label_name'), filled: true, fillColor: _isNameError ? Colors.red.withOpacity(0.1) : fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20))), 
       const SizedBox(height: 20), 
-      // FIX: Größere Schrift für Preis
       TextField(controller: _priceController, focusNode: _priceFocusNode, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1), textAlign: TextAlign.center, decoration: InputDecoration(labelText: T.get('label_price'), suffixText: "€", filled: true, fillColor: _isPriceError ? Colors.red.withOpacity(0.1) : fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20))), 
       const SizedBox(height: 20), 
       TextField(controller: _dateController, readOnly: true, onTap: _pickDate, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), decoration: InputDecoration(labelText: T.get('label_date'), prefixIcon: Icon(Icons.calendar_today, color: _juzyColor), filled: true, fillColor: fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20)))

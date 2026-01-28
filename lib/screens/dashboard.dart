@@ -54,16 +54,95 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {}); 
       }
     });
-    _loadData();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstRun());
+    // WICHTIG: Erst laden, dann prüfen
+    _loadData().then((_) => _checkFirstRun());
   }
 
   Future<void> _checkFirstRun() async {
     final prefs = await SharedPreferences.getInstance();
     bool isFirstRun = prefs.getBool('first_run') ?? true;
+    
     if (isFirstRun) {
-      _showOnboardingDialog(prefs);
+      // 1. Sofort Demo-Daten erzeugen und anzeigen
+      _createDemoData();
+      
+      // 2. Dann erst den Dialog zeigen (Daten sind im Hintergrund schon da)
+      if (mounted) {
+        _showOnboardingDialog(prefs);
+      }
     }
+  }
+
+  void _createDemoData() {
+    DateTime now = DateTime.now();
+
+    List<Item> demoItems = [
+      // 1. Teures Tech-Gadget (Lohnt sich langsam)
+      Item(
+        name: "Noise Cancelling Kopfhörer",
+        price: 349.00,
+        purchaseDate: now.subtract(const Duration(days: 120)), // Vor 4 Monaten
+        category: "cat_tech",
+        emoji: "🎧",
+        usagePeriod: "day",
+        estimatedUsageCount: 1, 
+        isSubscription: false,
+        subscriptionPeriod: "",
+        manualClicks: 0, 
+        projectedLifespanDays: 1095, // 3 Jahre
+      ),
+      
+      // 2. Kleidung (Saisonartikel, Manuell getrackt)
+      Item(
+        name: "Lederjacke",
+        price: 249.95,
+        purchaseDate: now.subtract(const Duration(days: 400)), // Vor über einem Jahr
+        category: "cat_clothes",
+        emoji: "🧥",
+        usagePeriod: "", // Manuell
+        estimatedUsageCount: 0, 
+        isSubscription: false,
+        subscriptionPeriod: "",
+        manualClicks: 45, // 45 mal getragen
+        projectedLifespanDays: 3650, // 10 Jahre (hält ewig)
+        targetCost: 1.00 // Ziel: 1€ pro Tragen
+      ),
+
+      // 3. Abo (Streaming)
+      Item(
+        name: "4K Streaming",
+        price: 17.99,
+        purchaseDate: now.subtract(const Duration(days: 180)), // Läuft seit 6 Monaten
+        category: "cat_entertainment",
+        emoji: "🍿",
+        usagePeriod: "",
+        estimatedUsageCount: 0,
+        isSubscription: true,
+        subscriptionPeriod: "month",
+        manualClicks: 85, // Oft genutzt
+        targetCost: 0.50 // Ziel: 50ct pro Filmabend
+      ),
+
+      // 4. Haushaltsgerät (Täglicher Gebrauch, hoher Invest)
+      Item(
+        name: "Siebträgermaschine",
+        price: 650.00,
+        purchaseDate: now.subtract(const Duration(days: 60)), // Vor 2 Monaten
+        category: "cat_living",
+        emoji: "☕",
+        usagePeriod: "day",
+        estimatedUsageCount: 3, // 3 Kaffees am Tag
+        isSubscription: false,
+        subscriptionPeriod: "",
+        manualClicks: 0,
+        projectedLifespanDays: 1825 // 5 Jahre
+      ),
+    ];
+
+    setState(() {
+      _items = demoItems;
+    });
+    _saveData();
   }
 
   void _showOnboardingDialog(SharedPreferences prefs) {
@@ -71,7 +150,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        // FIX: Explizite Farben für Dark/Light Mode, damit Kontrast immer stimmt
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final bgColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
         final textColor = isDark ? Colors.white : Colors.black;
@@ -219,19 +297,55 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     ));
   }
 
+  void _showStyledSnackBar(String message, {VoidCallback? onUndo}) {
+    final bool isRetro = widget.currentTheme == 'retro';
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+
+    final Color retroBg = const Color(0xFF3A2817); 
+    final Color retroText = const Color(0xFFF9F3E6); 
+    final Color retroBorder = const Color(0xFFD4522A); 
+
+    final Color modernBg = colorScheme.inverseSurface;
+    final Color modernText = colorScheme.onInverseSurface;
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        message,
+        style: TextStyle(
+          color: isRetro ? retroText : modernText,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: isRetro ? retroBg : modernBg,
+      behavior: SnackBarBehavior.floating,
+      elevation: isRetro ? 0 : 6,
+      shape: isRetro 
+        ? RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: retroBorder, width: 2) 
+          )
+        : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(16),
+      action: onUndo != null ? SnackBarAction(
+        label: T.get('undo'),
+        textColor: isRetro ? const Color(0xFF6BB8A7) : colorScheme.inversePrimary,
+        onPressed: onUndo,
+      ) : null,
+    ));
+    
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (mounted) {
+         try { ScaffoldMessenger.of(context).hideCurrentSnackBar(); } catch(e){}
+      }
+    });
+  }
+
   void _incrementUsage(Item item) {
     HapticFeedback.mediumImpact();
     setState(() { item.manualClicks++; });
     _saveData();
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("${item.name}: ${T.get('usage_added')}"), 
-      duration: const Duration(milliseconds: 1500), 
-      behavior: SnackBarBehavior.floating 
-    ));
-    Future.delayed(const Duration(milliseconds: 1600), () {
-      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    });
+    _showStyledSnackBar("${item.name}: ${T.get('usage_added')}");
   }
 
   void _updateUsageCount(Item item, int newCount) {
@@ -243,53 +357,40 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     HapticFeedback.heavyImpact();
     setState(() { item.consumedDate = DateTime.now(); });
     _saveData();
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("${item.name} ${item.isSubscription ? T.get('sub_ended') : T.get('item_archived')}"), 
-      duration: const Duration(milliseconds: 2500),
-      behavior: SnackBarBehavior.floating, 
-      action: SnackBarAction(
-        label: T.get('undo'), 
-        textColor: widget.currentTheme == 'retro' ? const Color(0xFFD4522A) : _juzyColor,
-        onPressed: () { 
-          setState(() { item.consumedDate = null; }); 
-          _saveData(); 
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        }
-      )
-    ));
-    Future.delayed(const Duration(milliseconds: 2600), () {
-      if (mounted) { try { ScaffoldMessenger.of(context).hideCurrentSnackBar(); } catch(e){} }
-    });
+    _showStyledSnackBar(
+      "${item.name} ${item.isSubscription ? T.get('sub_ended') : T.get('item_archived')}",
+      onUndo: () {
+        setState(() { item.consumedDate = null; });
+        _saveData();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      }
+    );
   }
 
   void _restoreItem(Item item) {
     HapticFeedback.mediumImpact();
     setState(() { item.consumedDate = null; });
     _saveData();
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(T.get('item_restored')), 
-      duration: const Duration(milliseconds: 1500),
-      behavior: SnackBarBehavior.floating
-    ));
-    Future.delayed(const Duration(milliseconds: 1600), () {
-      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    });
+    _showStyledSnackBar(T.get('item_restored'));
   }
 
   List<Item> _getFilteredItems(List<Item> inputList) {
     if (_searchQuery.isEmpty) return inputList;
-    return inputList.where((i) => i.name.toLowerCase().contains(_searchQuery.toLowerCase()) || i.category.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    return inputList.where((i) {
+      final nameMatch = i.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final catMatch = i.category.toLowerCase().contains(_searchQuery.toLowerCase());
+      final alias = _categoryAliases[i.category]?.toLowerCase() ?? "";
+      final aliasMatch = alias.contains(_searchQuery.toLowerCase());
+      return nameMatch || catMatch || aliasMatch;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final allPurchases = _items.where((i) => !i.isSubscription && i.isActive).toList();
-    final allSubs = _items.where((i) => i.isSubscription && i.isActive).toList();
+    final filteredAll = _getFilteredItems(_items);
     
-    final purchases = _getFilteredItems(allPurchases);
-    final subscriptions = _getFilteredItems(allSubs);
+    final purchases = filteredAll.where((i) => !i.isSubscription && i.isActive).toList();
+    final subscriptions = filteredAll.where((i) => i.isSubscription && i.isActive).toList();
 
     final dailyBurn = _items.where((i) => i.isActive).fold(0.0, (sum, item) => sum + item.pricePerDay);
     final colorScheme = Theme.of(context).colorScheme;
@@ -303,7 +404,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 50, 
-        // FIX: Besserer Titel-Kontrast. Retro = Dunkelbraun (gut auf Beige). Standard = Gradient.
         title: _isSearching 
           ? TextField(controller: _searchController, autofocus: true, decoration: InputDecoration(hintText: T.get('search'), border: InputBorder.none), onChanged: (val) => setState(() => _searchQuery = val))
           : (isHappy 
@@ -313,7 +413,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         centerTitle: true,
         actions: [
           IconButton(icon: Icon(_isSearching ? Icons.close : Icons.search), onPressed: () { HapticFeedback.selectionClick(); setState(() { _isSearching = !_isSearching; if (!_isSearching) { _searchQuery = ""; _searchController.clear(); } }); }),
-          if (!_isSearching) IconButton(icon: const Icon(Icons.settings), onPressed: () { HapticFeedback.selectionClick(); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(onThemeChanged: widget.onThemeChanged, currentTheme: widget.currentTheme, onLoadDemoData: _loadDemoData, onDeleteAllData: _deleteAllData, onLanguageChanged: widget.onLanguageChanged))).then((_) => _loadData()); })
+          if (!_isSearching) IconButton(icon: const Icon(Icons.settings), onPressed: () { HapticFeedback.selectionClick(); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(onThemeChanged: widget.onThemeChanged, currentTheme: widget.currentTheme, onDeleteAllData: _deleteAllData, onLanguageChanged: widget.onLanguageChanged))).then((_) => _loadData()); })
         ],
       ),
       body: Container(
@@ -321,7 +421,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         child: SafeArea(
           child: Column(
             children: [
-              if (!_isSearching) Container(padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24), child: Column(children: [Text(T.get('daily_cost'), style: TextStyle(color: isHappy ? const Color(0xFF3A2817) : colorScheme.primary, letterSpacing: 2, fontSize: 10, fontWeight: FontWeight.bold, fontStyle: isHappy ? FontStyle.italic : FontStyle.normal)), const SizedBox(height: 2), Text("${dailyBurn.toStringAsFixed(2)}€", style: dailyBurnTextStyle)])),
+              if (!_isSearching) Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24), 
+                child: Column(children: [
+                  Text(T.get('daily_cost'), style: TextStyle(color: isHappy ? const Color(0xFF3A2817) : colorScheme.primary, letterSpacing: 2, fontSize: 10, fontWeight: FontWeight.bold, fontStyle: isHappy ? FontStyle.italic : FontStyle.normal)), 
+                  const SizedBox(height: 2), 
+                  FittedBox(fit: BoxFit.scaleDown, child: Text("${dailyBurn.toStringAsFixed(2)}€", style: dailyBurnTextStyle))
+                ])
+              ),
               TabBar(
                 controller: _tabController,
                 onTap: (i) => HapticFeedback.selectionClick(), 
@@ -386,7 +493,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(padding: const EdgeInsets.only(left: 8, bottom: 4, top: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(displayName.toUpperCase(), style: TextStyle(color: widget.currentTheme == 'retro' ? const Color(0xFFD4522A) : Colors.grey, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(Icons.edit, size: 14, color: Colors.grey.withOpacity(0.5)), onPressed: () => _renameCategory(catKey))])),
+                Padding(padding: const EdgeInsets.only(left: 8, bottom: 6, top: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(displayName.toUpperCase(), style: TextStyle(color: widget.currentTheme == 'retro' ? const Color(0xFFD4522A) : Colors.grey, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2)), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(Icons.edit, size: 14, color: Colors.grey.withOpacity(0.5)), onPressed: () => _renameCategory(catKey))])),
                 Container(
                   margin: const EdgeInsets.only(bottom: 15),
                   clipBehavior: Clip.hardEdge, 
@@ -452,12 +559,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Widget _buildListItem(Item item, int realIndex, bool isLast, double avgCost, bool applyDailyRate) {
     final isHappy = widget.currentTheme == 'retro';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color textColor = isHappy ? const Color(0xFF3A2817) : Theme.of(context).colorScheme.onSurface;
+    Color subTextColor = isHappy ? Colors.grey[700]! : (isDark ? Colors.grey[400]! : Colors.grey);
+    
     Color? statusColor;
     if (avgCost > 0) {
-      if (item.costPerUse > avgCost * 2.0) statusColor = Colors.red.withOpacity(isHappy ? 0.1 : 0.2);
-      else if (item.costPerUse < avgCost * 0.5) statusColor = Colors.green.withOpacity(isHappy ? 0.1 : 0.2);
-      if (item.isSubscription && item.totalUsesCalculated < 2) statusColor = Colors.deepOrange.withOpacity(0.2);
+      if (item.costPerUse > avgCost * 2.0) statusColor = Colors.red.withOpacity(isHappy ? 0.1 : 0.15);
+      else if (item.costPerUse < avgCost * 0.5) statusColor = Colors.green.withOpacity(isHappy ? 0.1 : 0.15);
     }
     double? progress;
     bool reachedGoal = false;
@@ -470,7 +579,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
     String priceDisplay = "";
     String unitDisplay = "";
-    
     if (applyDailyRate) {
       priceDisplay = "${item.pricePerDay.toStringAsFixed(2)}€";
       unitDisplay = "/ ${T.get('per_day')}";
@@ -489,14 +597,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       child: Column(children: [
         ListTile(
           onTap: () => _openDetail(item, realIndex),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // FIX: Mehr Padding vertikal
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
           leading: Hero(
             tag: "item_img_${item.name}_$realIndex",
             child: Container(width: 48, height: 48, alignment: Alignment.center, decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: isHappy ? const Color(0xFFF4D98D) : Colors.grey.withOpacity(0.1), border: isHappy ? Border.all(color: const Color(0xFF3A2817), width: 1.5) : null, image: item.imagePath != null ? DecorationImage(image: FileImage(File(item.imagePath!)), fit: BoxFit.cover) : null), child: item.imagePath == null ? Material(color: Colors.transparent, child: Text(item.emoji ?? "📦", style: const TextStyle(fontSize: 26))) : null),
           ),
           title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            // FIX: Flexible erlaubt Zeilenumbruch bei langen Wörtern
-            Expanded(child: Row(children: [Flexible(child: Text(item.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor))), if (reachedGoal) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.emoji_events, size: 16, color: Colors.amber))])),
+            Expanded(child: Row(children: [Flexible(child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor))), if (reachedGoal) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.emoji_events, size: 16, color: Colors.amber))])),
           ]),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 4),
@@ -505,59 +612,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 item.isSubscription 
                     ? (item.subscriptionPeriod == 'year' ? T.get('yearly') : T.get('monthly')) 
                     : "${item.totalUsesCalculated.toInt()} ${T.get('times_used')}", 
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isHappy ? Colors.grey[700] : Colors.grey)
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: subTextColor)
               ), 
               if (progress != null && !reachedGoal) Padding(padding: const EdgeInsets.only(top: 6, right: 20), child: LinearProgressIndicator(value: progress, backgroundColor: Colors.grey.withOpacity(0.2), color: isHappy ? const Color(0xFF6BB8A7) : Colors.blueAccent, minHeight: 6, borderRadius: BorderRadius.circular(3)))
             ]),
           ),
           trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
             Text(priceDisplay, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: isHappy && reachedGoal ? const Color(0xFF6BB8A7) : textColor)), 
-            Text((item.targetCost != null && item.targetCost! > 0 && !applyDailyRate) ? "${T.get('goal')}: ${item.targetCost!.toStringAsFixed(2)}€" : unitDisplay, style: TextStyle(fontSize: 10, color: isHappy ? Colors.grey[700] : Colors.grey))
+            Text((item.targetCost != null && item.targetCost! > 0 && !applyDailyRate) ? "${T.get('goal')}: ${item.targetCost!.toStringAsFixed(2)}€" : unitDisplay, style: TextStyle(fontSize: 10, color: subTextColor))
           ]),
         ),
         if (!isLast) Divider(height: 1, indent: 80, endIndent: 20, color: isHappy ? const Color(0xFF6BB8A7).withOpacity(0.3) : Colors.white10),
       ]),
-    );
-  }
-
-  Widget _buildBarChart(Map<String, double> categoryCosts, double totalBurn) {
-    var sortedEntries = categoryCosts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final isHappy = widget.currentTheme == 'retro';
-    final colors = isHappy ? [const Color(0xFFD4522A), const Color(0xFFF2B84B), const Color(0xFF6BB8A7), const Color(0xFF8DC9BB), const Color(0xFFC44536)] : [const Color(0xFF64B5F6), const Color(0xFFBA68C8), const Color(0xFFFFB74D), const Color(0xFF81C784), const Color(0xFFE57373)];
-    
-    final Color contrastColor = isHappy ? const Color(0xFF3A2817) : Theme.of(context).colorScheme.onSurface;
-
-    return Column(
-      children: sortedEntries.asMap().entries.map((entry) {
-        int index = entry.key;
-        String cat = entry.value.key;
-        double value = entry.value.value;
-        double percentage = totalBurn > 0 ? value / totalBurn : 0;
-        String displayName = _categoryAliases[cat] ?? (cat.startsWith('cat_') ? T.get(cat) : cat);
-        Color barColor = colors[index % colors.length];
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0), // FIX: Mehr Platz
-          child: Stack(
-            children: [
-              Container(height: 30, width: double.infinity, decoration: BoxDecoration(color: isHappy ? Colors.white : Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: isHappy ? Border.all(color: Colors.black12) : null)),
-              FractionallySizedBox(widthFactor: percentage, child: Container(height: 30, decoration: BoxDecoration(color: barColor, borderRadius: BorderRadius.circular(8)))),
-              Positioned.fill(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(displayName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: percentage > 0.5 ? Colors.white : contrastColor)),
-                      Text("${(percentage * 100).toStringAsFixed(0)}% (${value.toStringAsFixed(2)}€)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: percentage > 0.5 ? Colors.white : contrastColor)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 
@@ -584,88 +650,83 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             const SizedBox(height: 15),
             _buildBarChart(categoryCosts, totalBurn),
           ],
-          
           const SizedBox(height: 30),
           Text(T.get('daily_usage_sum'), style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
           const SizedBox(height: 15),
           Row(children: [Expanded(child: _buildStatCard(T.get('daily_item'), "${burnItems.toStringAsFixed(2)}€", isHappy ? const Color(0xFF6BB8A7) : colorScheme.secondary)), const SizedBox(width: 12), Expanded(child: _buildStatCard(T.get('daily_subs'), "${burnSubs.toStringAsFixed(2)}€", isHappy ? const Color(0xFFF2B84B) : colorScheme.primary))]),
-          
           const SizedBox(height: 30),
           Text(T.get('history'), style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
           const SizedBox(height: 15),
-          if (historyItems.isEmpty) Center(child: Text(T.get('empty_stats'), style: TextStyle(color: textColor))),
-          
+          if (historyItems.isEmpty) Center(child: Text(T.get('empty_history'), style: TextStyle(color: textColor))),
           ...historyItems.map((item) { 
             final realIndex = _items.indexOf(item); 
-            
-            bool isSuccess = false;
-            String statusText = "";
-            bool moneySuccess = false;
-            if (item.targetCost != null && item.targetCost! > 0) {
-               moneySuccess = item.costPerUse <= item.targetCost!;
-            }
-
-            if (item.isSubscription) {
-               if (moneySuccess) { isSuccess = true; statusText = T.get('verdict_success'); } else { isSuccess = false; statusText = T.get('verdict_fail'); }
-            } else if (item.projectedLifespanDays != null) {
-              int actualDays = item.consumedDate!.difference(item.purchaseDate).inDays;
-              int plannedDays = item.projectedLifespanDays!;
-              if (actualDays >= plannedDays) { isSuccess = true; statusText = "+${actualDays - plannedDays}d ${T.get('lifespan_longer')}"; } 
-              else { if (moneySuccess) { isSuccess = true; statusText = "-${plannedDays - actualDays}d ${T.get('lifespan_shorter_good')}"; } else { isSuccess = false; statusText = "-${plannedDays - actualDays}d ${T.get('lifespan_shorter_bad')}"; } }
-            } else { isSuccess = true; }
-
-            Color statusColor = isSuccess ? Colors.green : Colors.red;
-            Color cardBg = isHappy ? (isSuccess ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE)) : (isSuccess ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1));
-            Color borderColor = isHappy ? statusColor : Colors.transparent;
-
-            return GestureDetector(
-              onTap: () => _openDetail(item, realIndex), 
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12), 
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
-                clipBehavior: Clip.hardEdge, 
-                decoration: BoxDecoration(
-                  color: cardBg, 
-                  borderRadius: BorderRadius.circular(15), 
-                  border: Border.all(color: borderColor, width: isHappy ? 2 : 0)
-                ), 
-                child: Row(
-                  children: [
-                    Text(item.emoji ?? "🏁", style: const TextStyle(fontSize: 26)), 
-                    const SizedBox(width: 15), 
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start, 
-                        children: [
-                          Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)), 
-                          Text("${item.totalUsesCalculated.toInt()} ${T.get('times_used')}", style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.8)))
-                        ]
-                      )
-                    ), 
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end, 
-                      children: [
-                        Row(children: [
-                          Text(statusText, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)),
-                          const SizedBox(width: 4),
-                          Icon(isSuccess ? Icons.check_circle : Icons.warning_amber_rounded, color: statusColor, size: 16)
-                        ]),
-                        Text("${item.costPerUse.toStringAsFixed(2)}€", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: textColor)), 
-                      ]
-                    )
-                  ]
-                )
-              )
-            ); 
+            return _buildHistoryCardItem(item, realIndex, isHappy, textColor);
           }),
           const SizedBox(height: 80),
         ]),
     );
   }
 
+  Widget _buildHistoryCardItem(Item item, int realIndex, bool isHappy, Color textColor) {
+    bool isSuccess = false;
+    String statusText = "";
+    if (item.targetCost != null && item.targetCost! > 0) {
+       isSuccess = item.costPerUse <= item.targetCost!;
+    } else {
+       isSuccess = true;
+    }
+    statusText = isSuccess ? T.get('verdict_success') : T.get('verdict_fail');
+    Color statusColor = isSuccess ? Colors.green : Colors.red;
+    Color cardBg = isHappy ? (isSuccess ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE)) : (isSuccess ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1));
+
+    return GestureDetector(
+      onTap: () => _openDetail(item, realIndex), 
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12), 
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), 
+        decoration: BoxDecoration(color: cardBg, borderRadius: BorderRadius.circular(15)), 
+        child: Row(
+          children: [
+            Text(item.emoji ?? "🏁", style: const TextStyle(fontSize: 26)), 
+            const SizedBox(width: 15), 
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)), Text("${item.totalUsesCalculated.toInt()} ${T.get('times_used')}", style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.8)))])), 
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Row(children: [Text(statusText, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor)), const SizedBox(width: 4), Icon(isSuccess ? Icons.check_circle : Icons.warning_amber_rounded, color: statusColor, size: 16)]),
+              Text("${item.costPerUse.toStringAsFixed(2)}€", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: textColor)), 
+            ])
+          ]
+        )
+      )
+    ); 
+  }
+
+  Widget _buildBarChart(Map<String, double> categoryCosts, double totalBurn) {
+    var sortedEntries = categoryCosts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final isHappy = widget.currentTheme == 'retro';
+    final colors = [const Color(0xFFD4522A), const Color(0xFFF2B84B), const Color(0xFF6BB8A7), const Color(0xFF8DC9BB), const Color(0xFFC44536)];
+    final Color contrastColor = isHappy ? const Color(0xFF3A2817) : Theme.of(context).colorScheme.onSurface;
+
+    return Column(
+      children: sortedEntries.asMap().entries.map((entry) {
+        double percentage = totalBurn > 0 ? entry.value.value / totalBurn : 0;
+        String displayName = _categoryAliases[entry.value.key] ?? (entry.value.key.startsWith('cat_') ? T.get(entry.value.key) : entry.value.key);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: Stack(
+            children: [
+              Container(height: 30, width: double.infinity, decoration: BoxDecoration(color: isHappy ? Colors.white : Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(8))),
+              FractionallySizedBox(widthFactor: percentage, child: Container(height: 30, decoration: BoxDecoration(color: colors[entry.key % colors.length], borderRadius: BorderRadius.circular(8)))),
+              Positioned.fill(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 10.0), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(displayName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: percentage > 0.5 ? Colors.white : contrastColor)), Text("${(percentage * 100).toStringAsFixed(0)}% (${entry.value.value.toStringAsFixed(2)}€)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: percentage > 0.5 ? Colors.white : contrastColor))]))),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildStatCard(String title, String value, Color color) {
     final isHappy = widget.currentTheme == 'retro';
-    return Container(padding: const EdgeInsets.all(20), clipBehavior: Clip.hardEdge, decoration: isHappy ? BoxDecoration(color: color, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF3A2817), width: 3), boxShadow: const [BoxShadow(color: Color(0xFF3A2817), offset: Offset(4, 4), blurRadius: 0)]) : BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.3))), child: Column(children: [Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isHappy ? Colors.white : color)), const SizedBox(height: 5), Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: isHappy ? FontWeight.bold : FontWeight.normal, color: isHappy ? const Color(0xFF3A2817) : Colors.grey))]));
+    return Container(padding: const EdgeInsets.all(20), decoration: isHappy ? BoxDecoration(color: color, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF3A2817), width: 3), boxShadow: const [BoxShadow(color: Color(0xFF3A2817), offset: Offset(4, 4), blurRadius: 0)]) : BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withOpacity(0.3))), child: Column(children: [Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isHappy ? Colors.white : color)), const SizedBox(height: 5), Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: isHappy ? FontWeight.bold : FontWeight.normal, color: isHappy ? const Color(0xFF3A2817) : Colors.grey))]));
   }
 
   void _openDetail(Item item, int index) {
@@ -687,10 +748,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
        availableCategories: _categories,
        customEmojis: _customCategoryEmojis, 
        onCategoriesChanged: (newCats, newEmojis) { 
-         setState(() {
-           _categories = newCats;
-           _customCategoryEmojis = newEmojis;
-         }); 
+         setState(() { _categories = newCats; _customCategoryEmojis = newEmojis; }); 
          _saveData(); 
        },
        onSave: (updatedItem) { setState(() => _items[index] = updatedItem); _saveData(); }, 
@@ -704,15 +762,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       item: Item(name: "", price: 0, purchaseDate: DateTime.now(), estimatedUsageCount: 5, usagePeriod: 'week', category: 'cat_misc'), 
       availableCategories: _categories,
       customEmojis: _customCategoryEmojis,
-      onCategoriesChanged: (newCats, newEmojis) {
-         setState(() {
-           _categories = newCats;
-           _customCategoryEmojis = newEmojis;
-         }); 
-         _saveData(); 
-       },
-       onSave: (newItem) { setState(() => _items.add(newItem)); _saveData(); }, 
-       onDelete: () {}
+      onCategoriesChanged: (newCats, newEmojis) { setState(() { _categories = newCats; _customCategoryEmojis = newEmojis; }); _saveData(); },
+      onSave: (newItem) { setState(() => _items.add(newItem)); _saveData(); }, 
+      onDelete: () {}
     )));
   }
 }

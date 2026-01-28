@@ -48,7 +48,6 @@ class _JuzyAppState extends State<JuzyApp> {
   }
 
   ThemeData _getTheme() {
-    // Wir machen hier KEINE Berechnung mehr, das ist sicherer.
     if (_currentTheme == 'retro') {
       return ThemeData(
         useMaterial3: true,
@@ -94,18 +93,15 @@ class _JuzyAppState extends State<JuzyApp> {
       ],
       supportedLocales: const [Locale('de'), Locale('en')],
       
-      // --- HIER IST DER NEUE, SICHERE FIX ---
-      // Wir skalieren die Schrift global über den Builder.
-      // Das funktioniert auch, wenn Google Fonts offline ist.
+      // FIXED: Scale changed from 1.15 to 1.10 as requested
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.15) // 15% Größer
+            textScaler: const TextScaler.linear(1.10) 
           ),
           child: child!,
         );
       },
-      // --------------------------------------
 
       home: DashboardPage(
         onThemeChanged: _changeTheme,
