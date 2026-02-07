@@ -1,131 +1,152 @@
 import 'dart:math';
 
 class Item {
+  String id;
   String name;
   double price;
   DateTime purchaseDate;
+  DateTime? consumedDate;
+  String category;
+  String? emoji;
+  String usagePeriod; // 'day', 'week', 'month', 'year' oder leer
+  int estimatedUsageCount;
   
-  // Nutzung
-  int estimatedUsageCount; // 0 = Manuelles Tracking
-  String usagePeriod; // 'day', 'week', 'month', 'year'
-  int manualClicks;
-  
-  // Abo
+  // Subscription fields
   bool isSubscription;
   String subscriptionPeriod; // 'month', 'year'
   
-  // Metadaten
-  String? emoji;
-  String? imagePath;
-  String category;
+  // Manual tracking
+  int manualClicks;
   
-  // Analyse
-  double? targetCost; // Ziel-Preis pro Nutzung
-  int? projectedLifespanDays; // Geplante Lebensdauer
-  DateTime? consumedDate; // Wann archiviert?
+  // Goals
+  double? targetCost; // Ziel-Kosten pro Nutzung (auch für Abos!)
+  int? projectedLifespanDays; // Nur für Einmalkäufe relevant
+  String? imagePath;
 
   Item({
+    String? id,
     required this.name,
     required this.price,
     required this.purchaseDate,
+    this.consumedDate,
+    required this.category,
+    this.emoji,
+    this.usagePeriod = '',
     this.estimatedUsageCount = 0,
-    this.usagePeriod = 'week',
-    this.manualClicks = 0,
     this.isSubscription = false,
     this.subscriptionPeriod = 'month',
-    this.emoji,
-    this.imagePath,
-    this.category = 'cat_misc',
+    this.manualClicks = 0,
     this.targetCost,
     this.projectedLifespanDays,
-    this.consumedDate,
-  });
+    this.imagePath,
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
-  // Berechnete Eigenschaften
-  bool get isActive => consumedDate == null;
-
-  double get totalUsesCalculated {
-    if (isSubscription) {
-      DateTime endDate = consumedDate ?? DateTime.now();
-      int days = endDate.difference(purchaseDate).inDays;
-      if (days < 1) days = 1;
-      
-      if (subscriptionPeriod == 'year') {
-        return days / 365.0;
-      } else {
-        return days / 30.0;
-      }
+  // --- DIE NEUE LOGIK ---
+  double get totalAccruedCost {
+    if (!isSubscription) {
+      return price;
     }
+
+    // Zeitdifferenz berechnen (Bis heute oder bis Archiv-Datum)
+    DateTime end = consumedDate ?? DateTime.now();
+    Duration duration = end.difference(purchaseDate);
     
-    if (estimatedUsageCount == 0) {
-      return manualClicks.toDouble();
+    // Einfache Näherung für Monate (30.44 Tage)
+    double monthsPassed = max(1, duration.inDays / 30.44); 
+    
+    if (subscriptionPeriod == 'year') {
+      // Wenn jährlich: Jahre berechnen (Monate / 12)
+      double yearsPassed = max(1, monthsPassed / 12);
+      // Kosten = Jahrespreis * Jahre (mindestens 1 Jahr wird berechnet am Anfang)
+      // Wir runden auf, da man meist im Voraus zahlt (angefangenes Jahr = volles Jahr zahlen)
+      return price * yearsPassed.ceil(); 
     } else {
-      DateTime endDate = consumedDate ?? DateTime.now();
-      int days = endDate.difference(purchaseDate).inDays;
-      if (days < 1) days = 1;
-      
-      double dailyRate = 0;
-      switch (usagePeriod) {
-        case 'day': dailyRate = estimatedUsageCount.toDouble(); break;
-        case 'week': dailyRate = estimatedUsageCount / 7.0; break;
-        case 'month': dailyRate = estimatedUsageCount / 30.0; break;
-        case 'year': dailyRate = estimatedUsageCount / 365.0; break;
-      }
-      return manualClicks + (dailyRate * days);
+      // Monatlich: Angefangener Monat zählt meist voll
+      return price * monthsPassed.ceil();
     }
   }
 
   double get costPerUse {
-    double uses = totalUsesCalculated;
-    if (uses < 1) uses = 1;
-    if (isSubscription) return price; 
-    return price / uses;
+    double totalCost = totalAccruedCost;
+    
+    // Nutzungen ermitteln
+    double uses;
+    if (isSubscription) {
+      uses = manualClicks.toDouble();
+    } else {
+      uses = totalUsesCalculated;
+    }
+
+    if (uses <= 0) return totalCost; // Wenn 0 Nutzung, sind die Kosten pro Nutzung = Gesamtkosten
+    return totalCost / uses;
   }
 
+  // Für die Statistik im Dashboard (Tägliche Kosten)
   double get pricePerDay {
     if (isSubscription) {
       if (subscriptionPeriod == 'year') return price / 365.0;
-      return price / 30.0;
+      return price / 30.44;
     }
-    DateTime endDate = consumedDate ?? DateTime.now();
-    int days = endDate.difference(purchaseDate).inDays;
-    if (days < 1) days = 1;
-    return price / days;
+    // Kauf: Preis / Lebensdauer (angenommen oder Ziel)
+    int lifespan = projectedLifespanDays ?? 365;
+    return price / lifespan;
   }
 
+  // Berechnete Nutzungen für Schätzungen (Einmalkäufe)
+  double get totalUsesCalculated {
+    if (manualClicks > 0 && usagePeriod.isEmpty) return manualClicks.toDouble();
+    if (manualClicks > 0 && isSubscription) return manualClicks.toDouble();
+
+    // Wenn Schätzung aktiv ist:
+    DateTime end = consumedDate ?? DateTime.now();
+    int daysOwned = end.difference(purchaseDate).inDays;
+    if (daysOwned < 0) daysOwned = 0;
+
+    if (usagePeriod == 'day') return daysOwned * estimatedUsageCount.toDouble();
+    if (usagePeriod == 'week') return (daysOwned / 7) * estimatedUsageCount;
+    if (usagePeriod == 'month') return (daysOwned / 30.44) * estimatedUsageCount;
+    if (usagePeriod == 'year') return (daysOwned / 365) * estimatedUsageCount;
+    
+    return manualClicks.toDouble();
+  }
+
+  bool get isActive => consumedDate == null;
+
   Map<String, dynamic> toJson() => {
+    'id': id,
     'name': name,
     'price': price,
     'purchaseDate': purchaseDate.toIso8601String(),
-    'estimatedUsageCount': estimatedUsageCount,
+    'consumedDate': consumedDate?.toIso8601String(),
+    'category': category,
+    'emoji': emoji,
     'usagePeriod': usagePeriod,
-    'manualClicks': manualClicks,
+    'estimatedUsageCount': estimatedUsageCount,
     'isSubscription': isSubscription,
     'subscriptionPeriod': subscriptionPeriod,
-    'emoji': emoji,
-    'imagePath': imagePath,
-    'category': category,
+    'manualClicks': manualClicks,
     'targetCost': targetCost,
     'projectedLifespanDays': projectedLifespanDays,
-    'consumedDate': consumedDate?.toIso8601String(),
+    'imagePath': imagePath,
   };
 
   factory Item.fromJson(Map<String, dynamic> json) {
     return Item(
+      id: json['id'],
       name: json['name'],
       price: (json['price'] as num).toDouble(),
       purchaseDate: DateTime.parse(json['purchaseDate']),
+      consumedDate: json['consumedDate'] != null ? DateTime.parse(json['consumedDate']) : null,
+      category: json['category'],
+      emoji: json['emoji'],
+      usagePeriod: json['usagePeriod'] ?? '',
       estimatedUsageCount: json['estimatedUsageCount'] ?? 0,
-      usagePeriod: json['usagePeriod'] ?? 'week',
-      manualClicks: json['manualClicks'] ?? 0,
       isSubscription: json['isSubscription'] ?? false,
       subscriptionPeriod: json['subscriptionPeriod'] ?? 'month',
-      emoji: json['emoji'],
-      imagePath: json['imagePath'],
-      category: json['category'] ?? 'cat_misc',
+      manualClicks: json['manualClicks'] ?? 0,
       targetCost: (json['targetCost'] as num?)?.toDouble(),
       projectedLifespanDays: json['projectedLifespanDays'],
-      consumedDate: json['consumedDate'] != null ? DateTime.parse(json['consumedDate']) : null,
+      imagePath: json['imagePath'],
     );
   }
 }

@@ -31,7 +31,7 @@ class EditItemPage extends StatefulWidget {
 class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMixin {
   int _currentStep = 0;
   int _totalSteps = 3;
-  // RESTORED: Celebration Controller
+  
   late AnimationController _celebrationController;
   late Animation<double> _scaleAnimation;
   
@@ -39,7 +39,6 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
 
   bool _isNameError = false;
   bool _isPriceError = false;
-  // RESTORED: Celebration Flag
   bool _showCelebration = false;
   
   bool _isDeletingCategory = false; 
@@ -80,7 +79,6 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    // RESTORED: Animation Setup
     _celebrationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _celebrationController, curve: Curves.elasticOut));
     
@@ -128,7 +126,6 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
 
   @override
   void dispose() { 
-    // RESTORED: Dispose Animation Controller
     _celebrationController.dispose(); 
     _nameController.dispose(); 
     _priceController.dispose(); 
@@ -208,8 +205,16 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
 
   double _calculateTargetCost() {
     double price = double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
-    if (price == 0 || _isManualTracking) return 0;
-    if (_isSubscription) return price / _subUsageGoal;
+    if (price == 0 || _isManualTracking && !_isSubscription) return 0;
+    
+    // ABO ZIEL BERECHNUNG
+    if (_isSubscription) {
+        // _subUsageGoal ist "Nutzungen pro Intervall"
+        // Wenn man 10€ zahlt und 4x nutzt, ist das Ziel 2.50€
+        if (_subUsageGoal <= 0) return price;
+        return price / _subUsageGoal; 
+    }
+    
     double weeksInLifespan = _lifespanDays / 7;
     double usesPerWeek = 0;
     switch (_usagePeriod) {
@@ -229,12 +234,10 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
     if (_currentStep < _totalSteps - 1) {
       setState(() => _currentStep++);
     } else {
-      // RESTORED: Trigger Animation instead of saving instantly
       _triggerCelebrationAndSave();
     }
   }
 
-  // RESTORED: The method to trigger the animation
   void _triggerCelebrationAndSave() {
     FocusScope.of(context).unfocus();
     setState(() => _showCelebration = true);
@@ -244,7 +247,12 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
   }
 
   void _saveAndExit() {
+    double calculatedTarget = _calculateTargetCost();
+    // Wenn manuelles Tracking ohne Abo: kein Ziel
+    if (_isManualTracking && !_isSubscription) calculatedTarget = 0;
+
     widget.onSave(Item(
+      id: widget.item.id, // ID behalten!
       name: _nameController.text, 
       price: double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0, 
       purchaseDate: _purchaseDate, 
@@ -256,7 +264,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       emoji: _emoji, 
       imagePath: _imagePath,
       category: _category, 
-      targetCost: (_isManualTracking && !_isSubscription) ? null : _calculateTargetCost(), 
+      targetCost: calculatedTarget > 0 ? calculatedTarget : null, 
       projectedLifespanDays: (_isSubscription || _isManualTracking) ? null : _lifespanDays.toInt(),
       consumedDate: _isConsumed ? (widget.item.consumedDate ?? DateTime.now()) : null
     )); 
@@ -415,7 +423,6 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
           Expanded(child: ElevatedButton(onPressed: _nextStep, style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: _juzyColor, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))), child: Text(isLastStep ? T.get('save') + " ✨" : T.get('next'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)))),
         ])),
       ]))),
-      // RESTORED: Celebration Overlay Stack
       if (_showCelebration) Positioned.fill(child: IgnorePointer(child: Container(color: Colors.black.withOpacity(0.1), child: Center(child: ScaleTransition(scale: _scaleAnimation, child: _imagePath != null ? Container(width: 150, height: 150, decoration: BoxDecoration(borderRadius: BorderRadius.circular(30), image: DecorationImage(image: FileImage(File(_imagePath!)), fit: BoxFit.cover))) : Text(_emoji ?? "📦", style: const TextStyle(fontSize: 150, decoration: TextDecoration.none)))))))
     ]);
   }
@@ -494,28 +501,34 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       if (_isSubscription) ...[
         const SizedBox(height: 30), Text(T.get('pay_interval'), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
         Row(children: [Expanded(child: ChoiceChip(label: Center(child: Text(T.get('monthly'))), selected: _subscriptionPeriod == 'month', onSelected: (s) => setState(() => _subscriptionPeriod = 'month'), selectedColor: _juzyColor, labelStyle: TextStyle(color: _subscriptionPeriod == 'month' ? Colors.white : colors.onSurface))), const SizedBox(width: 10), Expanded(child: ChoiceChip(label: Center(child: Text(T.get('yearly'))), selected: _subscriptionPeriod == 'year', onSelected: (s) => setState(() => _subscriptionPeriod = 'year'), selectedColor: _juzyColor, labelStyle: TextStyle(color: _subscriptionPeriod == 'year' ? Colors.white : colors.onSurface)))]),
+        
+        // HIER NEU: Die Info Box für Abos
+        const SizedBox(height: 20),
+        Container(margin: const EdgeInsets.only(bottom: 20), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(15)), child: Row(children: [Icon(Icons.info_outline, color: Colors.blue, size: 20), const SizedBox(width: 10), Expanded(child: Text(T.get('sub_calc_info'), style: const TextStyle(fontSize: 13, color: Colors.blueGrey)))])),
       ],
       const SizedBox(height: 30),
-      Text(T.get('tracking_method'), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-      Row(children: [Expanded(child: ChoiceChip(label: Center(child: Text(T.get('tracking_estimation'))), selected: !_isManualTracking, onSelected: (s) => setState(() => _isManualTracking = false), selectedColor: _juzyColor, labelStyle: TextStyle(color: !_isManualTracking ? Colors.white : colors.onSurface))), const SizedBox(width: 10), Expanded(child: ChoiceChip(label: Center(child: Text(T.get('tracking_manual'))), selected: _isManualTracking, onSelected: (s) => setState(() => _isManualTracking = true), selectedColor: _juzyColor, labelStyle: TextStyle(color: _isManualTracking ? Colors.white : colors.onSurface)))]),
-      const SizedBox(height: 30),
-      if (_isManualTracking) Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: colors.surfaceVariant.withOpacity(0.3), borderRadius: BorderRadius.circular(15)), child: Column(children: [
-        Text(T.get('manual_info'), style: const TextStyle(fontSize: 13)),
-        const SizedBox(height: 20),
-        Text(T.get('label_manual_usages'), style: const TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          IconButton(onPressed: () => setState(() { if(_manualClicks > 0) _manualClicks--; }), icon: const Icon(Icons.remove_circle_outline, color: Colors.red)),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text("$_manualClicks", style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold))),
-          IconButton(onPressed: () => setState(() => _manualClicks++), icon: Icon(Icons.add_circle_outline, color: _juzyColor)),
-        ])
-      ]))
-      else ...[
-        Container(margin: const EdgeInsets.only(bottom: 20), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: _juzyColor.withOpacity(0.1), borderRadius: BorderRadius.circular(15)), child: Row(children: [Icon(Icons.info_outline, color: _juzyColor, size: 20), const SizedBox(width: 10), Expanded(child: Text(T.get('estimation_info'), style: const TextStyle(fontSize: 13)))])),
+      if (!_isSubscription) ...[
+        Text(T.get('tracking_method'), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+        Row(children: [Expanded(child: ChoiceChip(label: Center(child: Text(T.get('tracking_estimation'))), selected: !_isManualTracking, onSelected: (s) => setState(() => _isManualTracking = false), selectedColor: _juzyColor, labelStyle: TextStyle(color: !_isManualTracking ? Colors.white : colors.onSurface))), const SizedBox(width: 10), Expanded(child: ChoiceChip(label: Center(child: Text(T.get('tracking_manual'))), selected: _isManualTracking, onSelected: (s) => setState(() => _isManualTracking = true), selectedColor: _juzyColor, labelStyle: TextStyle(color: _isManualTracking ? Colors.white : colors.onSurface)))]),
+        const SizedBox(height: 30),
+        if (_isManualTracking) Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: colors.surfaceVariant.withOpacity(0.3), borderRadius: BorderRadius.circular(15)), child: Column(children: [
+          Text(T.get('manual_info'), style: const TextStyle(fontSize: 13)),
+          const SizedBox(height: 20),
+          Text(T.get('label_manual_usages'), style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            IconButton(onPressed: () => setState(() { if(_manualClicks > 0) _manualClicks--; }), icon: const Icon(Icons.remove_circle_outline, color: Colors.red)),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text("$_manualClicks", style: const TextStyle(fontSize: 34, fontWeight: FontWeight.bold))),
+            IconButton(onPressed: () => setState(() => _manualClicks++), icon: Icon(Icons.add_circle_outline, color: _juzyColor)),
+          ])
+        ]))
+        else ...[
+          Container(margin: const EdgeInsets.only(bottom: 20), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: _juzyColor.withOpacity(0.1), borderRadius: BorderRadius.circular(15)), child: Row(children: [Icon(Icons.info_outline, color: _juzyColor, size: 20), const SizedBox(width: 10), Expanded(child: Text(T.get('estimation_info'), style: const TextStyle(fontSize: 13)))])),
 
-        Center(child: Text(T.get('usage_approx'), style: TextStyle(fontWeight: FontWeight.bold, color: _juzyColor))),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: () => setState(() { if(_usageCount > 1) _usageCount--; }), icon: const Icon(Icons.remove)), Text("$_usageCount", style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold)), IconButton(onPressed: () => setState(() => _usageCount++), icon: const Icon(Icons.add))]),
-        DropdownButton<String>(value: _usagePeriod, isExpanded: true, items: ['day', 'week', 'month', 'year'].map((v) => DropdownMenuItem(value: v, child: Center(child: Text("${T.get('times_per')} ${T.get('per_$v')}")))).toList(), onChanged: (v) => setState(() => _usagePeriod = v!))
+          Center(child: Text(T.get('usage_approx'), style: TextStyle(fontWeight: FontWeight.bold, color: _juzyColor))),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(onPressed: () => setState(() { if(_usageCount > 1) _usageCount--; }), icon: const Icon(Icons.remove)), Text("$_usageCount", style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold)), IconButton(onPressed: () => setState(() => _usageCount++), icon: const Icon(Icons.add))]),
+          DropdownButton<String>(value: _usagePeriod, isExpanded: true, items: ['day', 'week', 'month', 'year'].map((v) => DropdownMenuItem(value: v, child: Center(child: Text("${T.get('times_per')} ${T.get('per_$v')}")))).toList(), onChanged: (v) => setState(() => _usagePeriod = v!))
+        ]
       ]
     ]));
   }
@@ -525,6 +538,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
     
     if (_isSubscription) {
       return Padding(padding: const EdgeInsets.all(24), child: Column(children: [
+        // HIER NEU: Slider für Ziel (Abos)
         Text(T.get('sub_goal_hint'), style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
         const SizedBox(height: 20),
         Text("${_subUsageGoal.toInt()}x ${T.get('per_month')}", style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
@@ -570,12 +584,10 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       ),
 
       const Spacer(),
-      Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _juzyColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor)), child: Column(children: [Text(T.get('target_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), Text("${_calculateTargetFromLifespan().toStringAsFixed(2)} €", style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: _juzyColor)), Text(T.get('per_usage'), style: const TextStyle(fontSize: 13))])),
+      Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _juzyColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor)), child: Column(children: [Text(T.get('target_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), Text("${_calculateTargetCost().toStringAsFixed(2)} €", style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: _juzyColor)), Text(T.get('per_usage'), style: const TextStyle(fontSize: 13))])),
       const SizedBox(height: 40),
     ]));
   }
-
-  double _calculateTargetFromLifespan() => _calculateTargetCost();
 
   Widget _card(String t, IconData i, bool s, VoidCallback o) => GestureDetector(onTap: o, child: Container(height: 100, decoration: BoxDecoration(color: s ? _juzyColor.withOpacity(0.2) : Colors.transparent, border: Border.all(color: s ? _juzyColor : Colors.grey.withOpacity(0.2)), borderRadius: BorderRadius.circular(15)), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(i, color: s ? _juzyColor : Colors.grey), Text(t, style: TextStyle(fontWeight: FontWeight.bold, color: s ? _juzyColor : Colors.grey))])));
 }

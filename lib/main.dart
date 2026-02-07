@@ -1,111 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/dashboard.dart';
 import 'utils/translations.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  String theme = prefs.getString('theme') ?? 'dark';
-  String lang = prefs.getString('lang') ?? 'de';
-  T.code = lang;
-  
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(JuzyApp(initialTheme: theme, initialLang: lang));
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+
+  runApp(const JuzyApp());
 }
 
 class JuzyApp extends StatefulWidget {
-  final String initialTheme;
-  final String initialLang;
-  const JuzyApp({super.key, required this.initialTheme, required this.initialLang});
+  const JuzyApp({super.key});
 
   @override
   State<JuzyApp> createState() => _JuzyAppState();
 }
 
 class _JuzyAppState extends State<JuzyApp> {
-  late String _currentTheme;
+  // 'system', 'retro', 'light', 'dark'
+  String _currentThemeKey = 'system'; 
   
-  @override
-  void initState() {
-    super.initState();
-    _currentTheme = widget.initialTheme;
-  }
-
-  void _changeTheme(String newTheme) async {
-    setState(() => _currentTheme = newTheme);
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('theme', newTheme);
-  }
-
-  void _changeLanguage(String code) async {
-    setState(() => T.code = code);
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('lang', code);
-  }
-
-  ThemeData _getTheme() {
-    if (_currentTheme == 'retro') {
-      return ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF9F3E6), 
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFFD4522A), 
-          secondary: Color(0xFF6BB8A7), 
-          surface: Color(0xFFF4D98D), 
-          surfaceVariant: Color(0xFFE8D5B5),
-          onSurface: Color(0xFF3A2817), 
-        ),
-        textTheme: GoogleFonts.courierPrimeTextTheme(),
-      );
-    } else if (_currentTheme == 'light') {
-      return ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6BB8A7), brightness: Brightness.light),
-        textTheme: GoogleFonts.dmSansTextTheme(),
-      );
+  void _changeTheme(String newTheme) {
+    setState(() {
+      _currentThemeKey = newTheme;
+    });
+    
+    // Statusbar Farbe anpassen (nur nötig für Retro/Light/Dark Switch)
+    if (newTheme == 'dark') {
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     } else {
-      return ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6BB8A7), brightness: Brightness.dark),
-        textTheme: GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme),
-      );
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     }
+  }
+
+  void _changeLanguage(String code) {
+    setState(() {
+      T.code = code;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Logik für ThemeMode
+    ThemeMode mode;
+    if (_currentThemeKey == 'system') {
+      mode = ThemeMode.system;
+    } else if (_currentThemeKey == 'dark') {
+      mode = ThemeMode.dark;
+    } else {
+      mode = ThemeMode.light;
+    }
+
+    // Wenn 'retro' ausgewählt ist, überschreiben wir das Light Theme mit dem Retro-Look
+    final bool isRetroMode = _currentThemeKey == 'retro';
+
+    final ThemeData retroTheme = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: const ColorScheme.light(
+        primary: Color(0xFF6BB8A7), 
+        secondary: Color(0xFFD4522A), 
+        surface: Color(0xFFF9F3E6), 
+        onSurface: Color(0xFF3A2817), 
+      ),
+      scaffoldBackgroundColor: const Color(0xFFF9F3E6),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Color(0xFF3A2817),
+        centerTitle: true,
+      ),
+      textTheme: const TextTheme(
+        bodyMedium: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF3A2817)),
+        titleLarge: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF3A2817)),
+      ),
+    );
+
+    final ThemeData modernLight = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorSchemeSeed: const Color(0xFF6BB8A7),
+      scaffoldBackgroundColor: Colors.white,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+      ),
+    );
+
+    final ThemeData modernDark = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorSchemeSeed: const Color(0xFF6BB8A7),
+      scaffoldBackgroundColor: const Color(0xFF121212),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+      ),
+    );
+
     return MaterialApp(
-      title: 'JUZY 🥭',
       debugShowCheckedModeBanner: false,
-      theme: _getTheme(),
+      title: 'JUZY',
+      
+      supportedLocales: const [Locale('de'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('de'), Locale('en')],
       
-      // FIXED: Scale changed from 1.15 to 1.10 as requested
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.10) 
-          ),
-          child: child!,
-        );
-      },
+      themeMode: mode,
+      theme: isRetroMode ? retroTheme : modernLight,
+      darkTheme: modernDark,
 
       home: DashboardPage(
         onThemeChanged: _changeTheme,
-        currentTheme: _currentTheme,
+        currentTheme: _currentThemeKey,
         onLanguageChanged: _changeLanguage,
       ),
     );

@@ -4,11 +4,9 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// 1. Keystore Properties laden (Kotlin Style)
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -16,7 +14,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.vascodasoda.juzy" // Dein Paketname (prüfe ob der stimmt!)
+    namespace = "com.vascodasoda.juzy"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,7 +24,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
 
     sourceSets {
@@ -34,14 +32,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.vascodasoda.juzy" // Dein Paketname!
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.vascodasoda.juzy"
+        minSdk = flutter.minSdkVersion // WICHTIG: Damit alte Geräte unterstützt werden
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    // 2. Signing Configs definieren
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String?
@@ -53,11 +50,9 @@ android {
 
     buildTypes {
         release {
-            // 3. Signing Config anwenden
             signingConfig = signingConfigs.getByName("release")
-            
-            isMinifyEnabled = true // Kotlin: isMinifyEnabled statt minifyEnabled
-            isShrinkResources = true // Kotlin: isShrinkResources
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

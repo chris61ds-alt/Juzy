@@ -1,5 +1,5 @@
 class T {
-  static String code = 'de';
+  static String code = 'en';
 
   static final Map<String, Map<String, String>> _values = {
     'de': {
@@ -13,9 +13,7 @@ class T {
       'empty_items': 'Keine Artikel vorhanden',
       'empty_subs': 'Keine Abos vorhanden',
       'empty_stats': 'Keine Daten vorhanden',
-      'empty_history': 'Noch kein Müll', // NEU
-      
-      // Kategorien
+      'empty_history': 'Noch kein Archiv',
       'cat_living': 'Wohnen',
       'cat_tech': 'Technik',
       'cat_clothes': 'Kleidung',
@@ -26,7 +24,6 @@ class T {
       'cat_business': 'Business',
       'cat_health': 'Gesundheit',
       'cat_misc': 'Sonstiges',
-      
       'per_day': 'pro Tag',
       'per_usage': 'pro Nutzung',
       'years': 'Jahre',
@@ -41,12 +38,14 @@ class T {
       'daily_usage_sum': 'Täglicher Verbrauch',
       'daily_item': 'Artikel Ø',
       'daily_subs': 'Abos Ø',
-      'history': 'Müll', // GEÄNDERT
+      'history': 'Archiv / Historie',
       'lifespan_longer': 'länger gehalten',
       'lifespan_shorter_good': 'früher fertig (gut)',
       'lifespan_shorter_bad': 'früher defekt (schlecht)',
       'verdict_success': 'Erfolg',
       'verdict_fail': 'Verlust',
+      'verdict_excellent': 'Exzellent!',
+      'verdict_expensive': 'Zu teuer',
       'usage_added': 'Nutzung hinzugefügt',
       'sub_ended': 'beendet',
       'item_archived': 'archiviert',
@@ -57,8 +56,6 @@ class T {
       'cancel': 'Abbrechen',
       'save': 'Speichern',
       'delete': 'Löschen',
-      
-      // Edit / Detail
       'step_identity': 'Identität',
       'step_usage': 'Nutzung',
       'step_forecast': 'Prognose',
@@ -82,15 +79,13 @@ class T {
       'times_per': 'mal pro',
       'per_week': 'Woche',
       'per_year': 'Jahr',
-      'sub_goal_hint': 'Wie oft willst du es nutzen?',
-      'target_value': 'Ziel-Kosten',
+      'sub_goal_hint': 'Wie viel willst du maximal pro Nutzung zahlen?',
+      'target_value': 'Ziel: Kosten pro Nutzung',
       'wish_lifespan': 'Wunsch-Lebensdauer',
       'lifespan_hint': 'Wie lange soll der Artikel halten?',
       'days': 'Tage',
-      'calc_date': 'Rechnerisches Ende:',
+      'calc_date': 'Geplantes Ende:',
       'next': 'Weiter',
-      
-      // Detail Page specific
       'bought_on': 'Gekauft am',
       'started_on': 'Gestartet am',
       'cost_per_use': 'Kosten / Nutzung',
@@ -105,25 +100,29 @@ class T {
       'lost_per_use': 'Verlust / Nutzung',
       'archived': 'Archiviert',
       'usage_section_title': 'Nutzung',
-      
-      // Settings
       'settings_title': 'Einstellungen',
       'appearance': 'Erscheinungsbild',
       'theme_retro': 'Retro (Beige)',
       'theme_dark': 'Modern (Dunkel)',
       'theme_light': 'Modern (Hell)',
+      'theme_system': 'System (Automatisch)',
       'language': 'Sprache',
       'data_management': 'Datenverwaltung',
       'load_demo': 'Demo Daten laden',
       'delete_all_data': 'Alle Daten löschen',
       'delete_confirm_title': 'Wirklich löschen?',
       'delete_confirm_msg': 'Alle Einträge werden unwiderruflich entfernt.',
-      
-      // Onboarding
       'choose_lang': 'Wähle deine Sprache / Choose your language',
       'onboarding_welcome': 'Willkommen bei JUZY',
-      'onboarding_desc': 'Tracke den wahren Wert deiner Dinge.\nEntdecke Kosten pro Nutzung.\nKonsumiere bewusster.',
+      'onboarding_desc': 'Tracke den wahren Wert deiner Dinge.\nEntdecke Kosten pro Nutzung.',
+      'onboarding_legal': 'Mit dem Start akzeptierst du unsere Privacy Policy.',
       'lets_go': 'Los geht\'s!',
+      'legal': 'Rechtliches & Support',
+      'privacy_policy': 'Datenschutzerklärung',
+      'send_feedback': 'Feedback senden',
+      'contact_subject': 'JUZY Feedback',
+      'edit': 'Bearbeiten',
+      'sub_calc_info': 'Der Preis pro Nutzung wird über die gesamte Laufzeit gemittelt (Summe aller Zahlungen ÷ Gesamtnutzung).',
     },
     'en': {
       'app_name': 'JUZY',
@@ -136,8 +135,7 @@ class T {
       'empty_items': 'No items yet',
       'empty_subs': 'No subscriptions yet',
       'empty_stats': 'No data yet',
-      'empty_history': 'No trash yet', // NEW
-      
+      'empty_history': 'No archive yet',
       'cat_living': 'Living',
       'cat_tech': 'Tech',
       'cat_clothes': 'Clothes',
@@ -148,7 +146,6 @@ class T {
       'cat_business': 'Business',
       'cat_health': 'Health',
       'cat_misc': 'Misc',
-      
       'per_day': 'per day',
       'per_usage': 'per use',
       'years': 'years',
@@ -163,12 +160,14 @@ class T {
       'daily_usage_sum': 'Daily Usage',
       'daily_item': 'Items Ø',
       'daily_subs': 'Subs Ø',
-      'history': 'Trash', // CHANGED
+      'history': 'Archive / History',
       'lifespan_longer': 'lasted longer',
       'lifespan_shorter_good': 'finished early (good)',
       'lifespan_shorter_bad': 'broke early (bad)',
       'verdict_success': 'Success',
       'verdict_fail': 'Loss',
+      'verdict_excellent': 'Excellent!',
+      'verdict_expensive': 'Too expensive',
       'usage_added': 'Usage added',
       'sub_ended': 'ended',
       'item_archived': 'archived',
@@ -179,7 +178,6 @@ class T {
       'cancel': 'Cancel',
       'save': 'Save',
       'delete': 'Delete',
-      
       'step_identity': 'Identity',
       'step_usage': 'Usage',
       'step_forecast': 'Forecast',
@@ -203,14 +201,13 @@ class T {
       'times_per': 'times per',
       'per_week': 'Week',
       'per_year': 'Year',
-      'sub_goal_hint': 'Usage goal per period?',
-      'target_value': 'Target Cost',
+      'sub_goal_hint': 'What is your max cost per use?',
+      'target_value': 'Target: Cost per Use',
       'wish_lifespan': 'Target Lifespan',
       'lifespan_hint': 'How long should it last?',
       'days': 'Days',
       'calc_date': 'Est. end date:',
       'next': 'Next',
-      
       'bought_on': 'Bought on',
       'started_on': 'Started on',
       'cost_per_use': 'Cost / Use',
@@ -225,24 +222,29 @@ class T {
       'lost_per_use': 'lost / use',
       'archived': 'Archived',
       'usage_section_title': 'Usage',
-      
-      // Settings
       'settings_title': 'Settings',
       'appearance': 'Appearance',
       'theme_retro': 'Retro (Beige)',
       'theme_dark': 'Modern (Dark)',
       'theme_light': 'Modern (Light)',
+      'theme_system': 'System (Automatic)',
       'language': 'Language',
       'data_management': 'Data Management',
       'load_demo': 'Load Demo Data',
       'delete_all_data': 'Delete All Data',
       'delete_confirm_title': 'Really delete?',
       'delete_confirm_msg': 'All entries will be removed permanently.',
-      
       'choose_lang': 'Choose your language',
       'onboarding_welcome': 'Welcome to JUZY',
-      'onboarding_desc': 'Track the real value of your things.\nDiscover cost per use.\nConsume consciously.',
+      'onboarding_desc': 'Track the real value of your things.\nDiscover cost per use.',
+      'onboarding_legal': 'By starting, you agree to our Privacy Policy.',
       'lets_go': 'Let\'s go!',
+      'legal': 'Legal & Support',
+      'privacy_policy': 'Privacy Policy',
+      'send_feedback': 'Send Feedback',
+      'contact_subject': 'JUZY Feedback',
+      'edit': 'Edit',
+      'sub_calc_info': 'Cost per use is averaged over the entire duration (Sum of all payments ÷ Total Usage).',
     }
   };
 
