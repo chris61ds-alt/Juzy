@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui; // Wichtig für das Auslesen der Systemsprache
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -78,8 +79,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     bool isFirstRun = prefs.getBool('first_run') ?? true;
     
     if (isFirstRun) {
-      T.setLanguage('en'); 
-      widget.onLanguageChanged('en');
+      // Systemsprache auslesen und JUZY entsprechend einstellen
+      String sysLang = ui.PlatformDispatcher.instance.locale.languageCode;
+      String defaultLang = sysLang.startsWith('de') ? 'de' : 'en';
+      
+      T.setLanguage(defaultLang); 
+      widget.onLanguageChanged(defaultLang);
       
       if (mounted) {
         _showOnboardingDialog(prefs);
@@ -151,105 +156,59 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       builder: (ctx) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final bgColor = isDark ? const Color(0xFF2C2C2C) : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.black;
 
         return AlertDialog(
           backgroundColor: bgColor,
           surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-          content: ValueListenableBuilder<String>(
-            valueListenable: T.localeNotifier,
-            builder: (context, currentLang, child) {
-              final textColor = isDark ? Colors.white : Colors.black;
-
-              return ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text("🥭", style: TextStyle(fontSize: 50)),
-                    const SizedBox(height: 15),
-                    Text(T.get('choose_lang'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
-                    const SizedBox(height: 20),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _langChip("Deutsch", 'de', currentLang, (newCode) {
-                          T.setLanguage(newCode); 
-                          // widget.onLanguageChanged wird hier NICHT aufgerufen, um das Flackern/Neuladen zu verhindern.
-                        }, isDark, textColor),
-                        const SizedBox(width: 10),
-                        _langChip("English", 'en', currentLang, (newCode) {
-                          T.setLanguage(newCode); 
-                        }, isDark, textColor),
-                      ],
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("🥭", style: TextStyle(fontSize: 60)),
+                const SizedBox(height: 20),
+                Text(T.get('onboarding_welcome'), textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _juzyColor, height: 1.2)),
+                const SizedBox(height: 15),
+                Text(T.get('onboarding_desc'), textAlign: TextAlign.center, style: TextStyle(color: textColor.withValues(alpha: 0.8), height: 1.4, fontSize: 15)),
+                const SizedBox(height: 35),
+                
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await prefs.setBool('first_run', false);
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _juzyColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      elevation: 0
                     ),
-                    
-                    const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider()),
-                    
-                    Text(T.get('onboarding_welcome'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: _juzyColor)),
-                    const SizedBox(height: 10),
-                    Text(T.get('onboarding_desc'), textAlign: TextAlign.center, style: TextStyle(color: textColor.withValues(alpha: 0.8), height: 1.4)),
-                    const SizedBox(height: 30),
-                    
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await prefs.setBool('first_run', false);
-                          // Jetzt updaten wir die App global, da das Dialogfenster eh geschlossen wird
-                          widget.onLanguageChanged(T.code);
-                          if (context.mounted) Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _juzyColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          elevation: 0
-                        ),
-                        child: Text(T.get('onboarding_start').isEmpty ? "Start" : T.get('onboarding_start'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: () async { 
-                        final Uri url = Uri.parse(_privacyUrl); 
-                        if (!await launchUrl(url)) { debugPrint('Could not launch $_privacyUrl'); } 
-                      }, 
-                      child: Text(T.get('onboarding_legal'), textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.5), decoration: TextDecoration.underline))
-                    ),
-                  ],
+                    child: Text(T.get('onboarding_start').isEmpty ? "Start" : T.get('onboarding_start'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ),
                 ),
-              );
-            }
+                
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () async { 
+                    final Uri url = Uri.parse(_privacyUrl); 
+                    if (!await launchUrl(url)) { debugPrint('Could not launch $_privacyUrl'); } 
+                  }, 
+                  child: Text(T.get('onboarding_legal'), textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.5), decoration: TextDecoration.underline))
+                ),
+              ],
+            ),
           ),
         );
       }
     );
   }
 
-  Widget _langChip(String label, String code, String currentSelection, Function(String) onSelect, bool isDark, Color textColor) {
-    bool isSelected = currentSelection == code;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (bool selected) {
-        if (selected) {
-          onSelect(code);
-        }
-      },
-      selectedColor: _juzyColor,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : textColor, 
-        fontWeight: FontWeight.bold
-      ),
-      backgroundColor: isDark ? Colors.black54 : Colors.grey[200],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none)
-    );
-  }
-  
   @override
   void dispose() { 
     _tabController.dispose(); 
@@ -381,7 +340,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         ],
       ),
       body: Container(decoration: happyBackground, child: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: Column(children: [
-                  if (!_isSearching) Container(padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24), child: Column(children: [Text(headerTitle, style: TextStyle(color: isRetro ? const Color(0xFF3A2817) : colorScheme.primary, letterSpacing: 2, fontSize: 10, fontWeight: FontWeight.bold, fontStyle: isRetro ? FontStyle.italic : FontStyle.normal)), const SizedBox(height: 2), FittedBox(fit: BoxFit.scaleDown, child: RollingNumber(value: displayedCost, style: dailyBurnTextStyle, suffix: "€"))])),
+                  if (!_isSearching) Container(padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 24), child: Column(children: [Text(headerTitle, style: TextStyle(color: isRetro ? const Color(0xFF3A2817) : colorScheme.primary, letterSpacing: 2, fontSize: 10, fontWeight: FontWeight.bold, fontStyle: isRetro ? FontStyle.italic : FontStyle.normal)), const SizedBox(height: 2), FittedBox(fit: BoxFit.scaleDown, child: RollingNumber(value: displayedCost, style: dailyBurnTextStyle, suffix: T.currency))])),
                   TabBar(controller: _tabController, onTap: (i) => HapticFeedback.selectionClick(), indicatorColor: isRetro ? const Color(0xFFD4522A) : colorScheme.primary, indicatorWeight: isRetro ? 4.0 : 2.0, labelColor: isRetro ? const Color(0xFFD4522A) : colorScheme.primary, unselectedLabelColor: isRetro ? const Color(0xFF9B8E3F) : Colors.grey, dividerColor: Colors.transparent, labelStyle: const TextStyle(fontWeight: FontWeight.bold), tabs: [Tab(text: T.get('items')), Tab(text: T.get('subs')), Tab(text: T.get('stats'))]),
                   Expanded(child: TabBarView(controller: _tabController, children: [_buildCategoryList(purchasesActive, purchasesArchived, T.get('empty_items'), false, false), _buildCategoryList(subsActive, subsArchived, T.get('empty_subs'), _showDailyRates, true), _buildStatisticsPage()])),
                 ]))))),
@@ -665,7 +624,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                  Text("${item.costPerUse.toStringAsFixed(2)}€", style: TextStyle(color: isBest ? Colors.green : Colors.red, fontWeight: FontWeight.w900, fontSize: 10)),
+                  Text("${item.costPerUse.toStringAsFixed(2)}${T.currency}", style: TextStyle(color: isBest ? Colors.green : Colors.red, fontWeight: FontWeight.w900, fontSize: 10)),
                 ],
               ),
             )
@@ -700,7 +659,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       padding: const EdgeInsets.all(20),
       decoration: isRetro ? BoxDecoration(color: color, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF3A2817), width: 3), boxShadow: const [BoxShadow(color: Color(0xFF3A2817), offset: Offset(4, 4))]) : BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withValues(alpha: 0.3))),
       child: Column(children: [
-        RollingNumber(value: value, isInt: useInt, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isRetro ? Colors.white : color), suffix: "€"),
+        RollingNumber(value: value, isInt: useInt, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isRetro ? Colors.white : color), suffix: T.currency),
         const SizedBox(height: 5),
         Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: isRetro ? FontWeight.bold : FontWeight.normal, color: isRetro ? const Color(0xFF3A2817) : Colors.grey))
       ])

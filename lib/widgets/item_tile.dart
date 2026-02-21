@@ -82,12 +82,12 @@ class ItemTile extends StatelessWidget {
     String priceDisplay;
     
     if (showDailyRates) {
-      priceDisplay = "${item.pricePerDay.toStringAsFixed(2)}€ /${T.get('days')}";
+      priceDisplay = "${item.pricePerDay.toStringAsFixed(2)}${T.currency} /${T.get('days')}";
     } else {
       if (item.isSubscription) {
-        priceDisplay = "${item.price.toStringAsFixed(2)}€";
+        priceDisplay = "${item.price.toStringAsFixed(2)}${T.currency}";
       } else {
-        priceDisplay = "${item.costPerUse.toStringAsFixed(2)}€";
+        priceDisplay = "${item.costPerUse.toStringAsFixed(2)}${T.currency}";
       }
     }
 
@@ -106,7 +106,7 @@ class ItemTile extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: isRetro ? const Color(0xFFF4D98D) : Colors.grey.withOpacity(0.1),
+                color: isRetro ? const Color(0xFFF4D98D) : Colors.grey.withValues(alpha: 0.1),
                 border: isRetro ? Border.all(color: const Color(0xFF3A2817), width: 1.5) : null,
                 image: item.imagePath != null
                     ? DecorationImage(image: FileImage(File(item.imagePath!)), fit: BoxFit.cover)
@@ -148,7 +148,7 @@ class ItemTile extends StatelessWidget {
                   return Icon(
                     index < stars ? Icons.star_rounded : Icons.star_border_rounded,
                     size: 14,
-                    color: index < stars ? starColor : Colors.grey.withOpacity(0.3),
+                    color: index < stars ? starColor : Colors.grey.withValues(alpha: 0.3),
                   );
                 }),
               ),
@@ -160,7 +160,7 @@ class ItemTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(2),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Colors.grey.withOpacity(0.1),
+                      backgroundColor: Colors.grey.withValues(alpha: 0.1),
                       color: isRetro ? const Color(0xFF6BB8A7) : Colors.blueAccent,
                       minHeight: 4,
                     ),
@@ -195,7 +195,7 @@ class ItemTile extends StatelessWidget {
             height: 1,
             indent: 82,
             endIndent: 20,
-            color: isRetro ? const Color(0xFF6BB8A7).withOpacity(0.2) : Colors.white10,
+            color: isRetro ? const Color(0xFF6BB8A7).withValues(alpha: 0.2) : Colors.white10,
           ),
       ],
     );

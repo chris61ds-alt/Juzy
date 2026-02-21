@@ -32,7 +32,7 @@ class HistoryTile extends StatelessWidget {
       isSuccess = (actualDays >= plannedDays);
     }
 
-    String statusText = isSuccess ? T.get('verdict_success') : T.get('verdict_fail');
+    String statusText = isSuccess ? T.get('verdict_excellent') : T.get('verdict_fail');
     Color statusColor = isSuccess ? Colors.green : Colors.red;
     
     // Hintergrundfarbe basierend auf Theme und Erfolg
@@ -40,7 +40,7 @@ class HistoryTile extends StatelessWidget {
     if (isRetro) {
       cardBg = isSuccess ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
     } else {
-      cardBg = isSuccess ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1);
+      cardBg = isSuccess ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1);
     }
 
     return GestureDetector(
@@ -68,7 +68,7 @@ class HistoryTile extends StatelessWidget {
                   ),
                   Text(
                     "${item.totalUsesCalculated.toInt()} ${T.get('times_used')}",
-                    style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.8)),
+                    style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.8)),
                   )
                 ],
               ),
@@ -91,7 +91,7 @@ class HistoryTile extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  "${item.costPerUse.toStringAsFixed(2)}€",
+                  "${item.costPerUse.toStringAsFixed(2)}${T.currency}",
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: textColor),
                 )
               ],

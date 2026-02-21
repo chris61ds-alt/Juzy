@@ -5,16 +5,29 @@ class T {
   static final ValueNotifier<String> localeNotifier = ValueNotifier<String>('en');
   static String get code => localeNotifier.value;
 
+  // NEU: Globale Verwaltung der Währung
+  static final ValueNotifier<String> currencyNotifier = ValueNotifier<String>('€');
+  static String get currency => currencyNotifier.value;
+
   static Future<void> init() async {
     var box = await Hive.openBox('settings');
     String? savedLang = box.get('language');
     if (savedLang != null) localeNotifier.value = savedLang;
+    
+    String? savedCurr = box.get('currency');
+    if (savedCurr != null) currencyNotifier.value = savedCurr;
   }
 
   static Future<void> setLanguage(String lang) async {
     localeNotifier.value = lang;
     var box = await Hive.openBox('settings');
     await box.put('language', lang);
+  }
+
+  static Future<void> setCurrency(String curr) async {
+    currencyNotifier.value = curr;
+    var box = await Hive.openBox('settings');
+    await box.put('currency', curr);
   }
 
   static final Map<String, Map<String, String>> _values = {
@@ -33,6 +46,7 @@ class T {
       'settings_title': 'Settings',
       'appearance': 'Appearance',
       'language': 'Language',
+      'currency': 'Currency',
       'data_management': 'Data Management',
       'legal': 'Legal',
       'group_rename': 'Rename Group',
@@ -170,6 +184,7 @@ class T {
       'settings_title': 'Einstellungen',
       'appearance': 'Design',
       'language': 'Sprache',
+      'currency': 'Währung',
       'data_management': 'Daten-Verwaltung',
       'legal': 'Rechtliches',
       'group_rename': 'Gruppe umbenennen',

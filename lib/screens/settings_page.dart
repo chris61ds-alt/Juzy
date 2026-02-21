@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:in_app_review/in_app_review.dart';
 import '../utils/translations.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -23,6 +24,32 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  
+  void _pickCurrency(BuildContext context) {
+    showDialog(context: context, builder: (ctx) => AlertDialog(
+      title: Text(T.get('currency')),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: ['€', '\$', '£', '¥', 'CHF'].map((c) => ListTile(
+          title: Text(c, style: const TextStyle(fontSize: 20)),
+          trailing: T.currency == c ? const Icon(Icons.check, color: Color(0xFF6BB8A7)) : null,
+          onTap: () {
+            T.setCurrency(c);
+            setState((){});
+            Navigator.pop(ctx);
+          }
+        )).toList(),
+      ),
+    ));
+  }
+
+  void _requestReview() async {
+    final InAppReview inAppReview = InAppReview.instance;
+    if (await inAppReview.isAvailable()) {
+      inAppReview.requestReview();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isRetro = widget.currentTheme == 'retro';
@@ -48,13 +75,21 @@ class _SettingsPageState extends State<SettingsPage> {
                 _buildTile(Icons.language, "Deutsch", T.code == 'de', () => widget.onLanguageChanged('de')),
                 _buildTile(Icons.language, "English", T.code == 'en', () => widget.onLanguageChanged('en')),
               ]),
+              _buildSection(context, T.get('currency'), cardColor, [
+                ListTile(
+                  leading: const Icon(Icons.payments_outlined, color: Color(0xFF6BB8A7)),
+                  title: Text(T.get('currency')),
+                  trailing: Text(T.currency, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  onTap: () => _pickCurrency(context),
+                )
+              ]),
               _buildSection(context, T.get('data_management'), cardColor, [
                 ListTile(leading: const Icon(Icons.playlist_add, color: Colors.orange), title: Text(T.get('load_demo')), onTap: () { widget.onLoadDemoData(); Navigator.pop(context); }),
                 const Divider(),
                 ListTile(leading: const Icon(Icons.delete_forever, color: Colors.red), title: Text(T.get('delete_all_data'), style: const TextStyle(color: Colors.red)), onTap: () => _confirmDelete(context)),
               ]),
               _buildSection(context, T.get('legal'), cardColor, [
-                _buildTile(Icons.star_rate_rounded, T.get('rate_app'), false, () {}, iconColor: Colors.amber),
+                _buildTile(Icons.star_rate_rounded, T.get('rate_app'), false, _requestReview, iconColor: Colors.amber),
                 _buildTile(Icons.privacy_tip_outlined, T.get('privacy_policy'), false, () async { final Uri url = Uri.parse("https://chris61ds-alt.github.io/Juzy-Legal/"); if (!await launchUrl(url)) debugPrint('Could not launch privacy'); }),
               ]),
             ],
@@ -67,7 +102,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSection(BuildContext context, String title, Color cardColor, List<Widget> children) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(padding: const EdgeInsets.only(left: 12, bottom: 8, top: 10), child: Text(title.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 1.0))),
-      Container(decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]), child: Column(children: children)),
+      Container(decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]), child: Column(children: children)),
       const SizedBox(height: 15),
     ]);
   }

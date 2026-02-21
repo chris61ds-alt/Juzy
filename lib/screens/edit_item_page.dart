@@ -187,7 +187,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
 
   double _calculateTargetCost() {
     double price = double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
-    if (price == 0 || _isManualTracking && !_isSubscription) return 0;
+    if (price == 0 || (_isManualTracking && !_isSubscription)) return 0;
     if (_isSubscription) {
         if (_subUsageGoal <= 0) return price;
         return price / _subUsageGoal; 
@@ -429,7 +429,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       const SizedBox(height: 40), 
       TextField(controller: _nameController, textCapitalization: TextCapitalization.sentences, textInputAction: TextInputAction.next, onSubmitted: (_) => FocusScope.of(context).requestFocus(_priceFocusNode), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), decoration: InputDecoration(labelText: T.get('label_name'), filled: true, fillColor: _isNameError ? Colors.red.withValues(alpha: 0.1) : fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20))), 
       const SizedBox(height: 20), 
-      TextField(controller: _priceController, focusNode: _priceFocusNode, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1), textAlign: TextAlign.center, decoration: InputDecoration(labelText: T.get('label_price'), suffixText: "€", filled: true, fillColor: _isPriceError ? Colors.red.withValues(alpha: 0.1) : fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20))), 
+      TextField(controller: _priceController, focusNode: _priceFocusNode, keyboardType: const TextInputType.numberWithOptions(decimal: true), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1), textAlign: TextAlign.center, decoration: InputDecoration(labelText: T.get('label_price'), suffixText: T.currency, filled: true, fillColor: _isPriceError ? Colors.red.withValues(alpha: 0.1) : fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20))), 
       const SizedBox(height: 20), 
       TextField(controller: _dateController, readOnly: true, onTap: _pickDate, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), decoration: InputDecoration(labelText: T.get('label_date'), prefixIcon: Icon(Icons.calendar_today, color: _juzyColor), filled: true, fillColor: fillColor, enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: borderColor)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: _juzyColor, width: 2)), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)), contentPadding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20)))
     ]));
@@ -479,7 +479,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
         Text("${_subUsageGoal.toInt()}x ${T.get('per_month')}", style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
         Slider(value: _subUsageGoal, min: 1, max: 30, activeColor: _juzyColor, onChanged: (v) => setState(() => _subUsageGoal = v)),
         const Spacer(),
-        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor)), child: Column(children: [Text(T.get('target_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), Text("${_calculateTargetCost().toStringAsFixed(2)} €", style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: _juzyColor)), Text(T.get('per_usage'), style: const TextStyle(fontSize: 13))])),
+        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor)), child: Column(children: [Text(T.get('target_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), Text("${_calculateTargetCost().toStringAsFixed(2)} ${T.currency}", style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: _juzyColor)), Text(T.get('per_usage'), style: const TextStyle(fontSize: 13))])),
         const SizedBox(height: 40),
       ]));
     }
@@ -498,7 +498,7 @@ class _EditItemPageState extends State<EditItemPage> with TickerProviderStateMix
       const SizedBox(height: 10),
       Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Text("${T.get('calc_date')} $dateString", style: TextStyle(color: _juzyColor, fontWeight: FontWeight.bold))),
       const Spacer(),
-      Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor)), child: Column(children: [Text(T.get('target_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), Text("${_calculateTargetCost().toStringAsFixed(2)} €", style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: _juzyColor)), Text(T.get('per_usage'), style: const TextStyle(fontSize: 13))])),
+      Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor)), child: Column(children: [Text(T.get('target_value'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), Text("${_calculateTargetCost().toStringAsFixed(2)} ${T.currency}", style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: _juzyColor)), Text(T.get('per_usage'), style: const TextStyle(fontSize: 13))])),
       const SizedBox(height: 40),
     ]));
   }

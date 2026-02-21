@@ -1,7 +1,7 @@
 name: value_tracker
 description: JUZY - Cost per Use Tracker
 publish_to: 'none'
-version: 1.1.1+15
+version: 1.1.1+17
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
@@ -24,6 +24,7 @@ dependencies:
   permission_handler: ^11.3.0
   image_picker: ^1.2.1
   provider: ^6.1.1 # War zuvor nicht enthalten
+  in_app_review: ^2.0.11
 
 dev_dependencies:
   flutter_test:
