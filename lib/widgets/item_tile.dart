@@ -1,58 +1,203 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'dart:io';
 import '../models/item.dart';
 import '../utils/translations.dart';
 
 class ItemTile extends StatelessWidget {
   final Item item;
-  final int index;
+  final int index; 
   final bool isLast;
-  final double avgCost;
-  final bool showDailyRates;
-  final bool isRetro;
+  final double avgCost; 
+  final bool showDailyRates; 
+  final bool isRetro; 
   final VoidCallback onTap;
 
-  const ItemTile({super.key, required this.item, required this.index, required this.isLast, required this.avgCost, required this.showDailyRates, required this.isRetro, required this.onTap});
+  const ItemTile({
+    super.key,
+    required this.item,
+    required this.index,
+    required this.isLast,
+    required this.avgCost,
+    required this.showDailyRates,
+    required this.isRetro,
+    required this.onTap,
+  });
+
+  int _calculateStars() {
+    if (item.daysOwned < 3 && item.manualClicks < 5) return 5;
+    if (item.targetCost != null && item.targetCost! > 0) {
+      double ratio = item.costPerUse / item.targetCost!;
+      if (ratio <= 1.0) return 5;
+      if (ratio <= 1.25) return 4;
+      if (ratio <= 1.5) return 3;
+      if (ratio <= 1.75) return 2;
+      return 1;
+    }
+    if (!item.isSubscription && item.projectedLifespanDays != null) {
+      double ratio = item.daysOwned / item.projectedLifespanDays!;
+      if (ratio >= 1.0) return 5; 
+      if (ratio >= 0.8) return 4;
+      if (ratio >= 0.5) return 3;
+      if (ratio >= 0.2) return 2;
+      return 1;
+    }
+    if (item.totalUsesCalculated > 0) return 4;
+    return 2;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final Color cardColor = isRetro ? Colors.white : Theme.of(context).cardColor;
-    final Color textColor = isRetro ? const Color(0xFF3A2817) : Theme.of(context).colorScheme.onSurface;
-    final Color borderColor = isRetro ? const Color(0xFF6BB8A7).withOpacity(0.5) : Colors.transparent;
-    final List<BoxShadow> shadows = isRetro ? [const BoxShadow(color: Color(0xFFD4522A), offset: Offset(2, 2), blurRadius: 0)] : [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))];
+    final textColor = isRetro ? const Color(0xFF3A2817) : Theme.of(context).colorScheme.onSurface;
+    final subTextColor = isRetro ? Colors.grey[700]! : Colors.grey;
+    final Color starColor = Colors.amber;
 
-    Widget? verdictBadge;
-    double cost = item.costPerUse;
-    if (!item.isSubscription && item.isActive) {
-      if (item.daysOwned > 30 && cost < 1.0) verdictBadge = _badge(Icons.star, Colors.amber, "Top");
-      else if (item.daysOwned > 60 && cost > 5.0) verdictBadge = _badge(Icons.warning_amber_rounded, Colors.orange, "Teuer");
+    // Fortschritt & Zielberechnung für die Anzeige
+    double? progress;
+    bool reachedGoal = false;
+    String usageFraction = "";
+
+    // 1. Anzeige für Abos
+    if (item.isSubscription) {
+        // Bei Abos zeigen wir das Intervall
+        usageFraction = item.subscriptionPeriod == 'year' ? T.get('yearly') : T.get('monthly');
+    } 
+    // 2. Anzeige für Items mit Ziel (z.B. "12 / 100")
+    else if (item.targetCost != null && item.targetCost! > 0) {
+      double neededUses = item.price / item.targetCost!;
+      double currentUses = item.totalUsesCalculated;
+      if (neededUses < 1) neededUses = 1;
+      
+      progress = currentUses / neededUses;
+      if (progress >= 1.0) reachedGoal = true;
+      
+      // Formatierung: Keine Nachkommastellen bei Nutzungen
+      usageFraction = "${currentUses.toInt()} / ${neededUses.toInt()}"; 
+    } 
+    // 3. Fallback Items ohne Ziel (z.B. "12 genutzt")
+    else {
+      usageFraction = "${item.totalUsesCalculated.toInt()} ${T.get('times_used')}";
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: GestureDetector(
-        onTap: () { HapticFeedback.selectionClick(); onTap(); },
-        child: Container(
-          decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: borderColor, width: isRetro ? 2 : 0), boxShadow: shadows),
-          padding: const EdgeInsets.all(12),
-          child: Row(children: [
-              Container(width: 50, height: 50, decoration: BoxDecoration(color: isRetro ? const Color(0xFFF9F3E6) : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3), borderRadius: BorderRadius.circular(12)), child: Center(child: Text(item.emoji ?? "📦", style: const TextStyle(fontSize: 24)))),
-              const SizedBox(width: 15),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [Flexible(child: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor), overflow: TextOverflow.ellipsis)), if (verdictBadge != null) ...[const SizedBox(width: 6), verdictBadge]]),
-                    const SizedBox(height: 4),
-                    Text(item.isSubscription ? "${item.subscriptionPeriod == 'month' ? 'Monatlich' : 'Jährlich'}" : "${T.get('bought_on')} ${_dateStr(item.purchaseDate)}", style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 11)),
-              ])),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  if (showDailyRates) Text("${item.pricePerDay.toStringAsFixed(2)}€", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor))
-                  else if (item.isSubscription) Text("${item.price.toStringAsFixed(2)}€", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor))
-                  else Text("${item.costPerUse.toStringAsFixed(2)}€", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: _getColorForCost(item.costPerUse))),
-                  const SizedBox(height: 2),
-                  Text(showDailyRates ? "/ ${T.get('days')}" : (!item.isSubscription ? T.get('per_usage') : "Kosten"), style: TextStyle(fontSize: 10, color: textColor.withOpacity(0.4))),
-              ]),
-    ]))));
+    // Preisanzeige
+    String priceDisplay;
+    
+    if (showDailyRates) {
+      priceDisplay = "${item.pricePerDay.toStringAsFixed(2)}€ /${T.get('days')}";
+    } else {
+      if (item.isSubscription) {
+        priceDisplay = "${item.price.toStringAsFixed(2)}€";
+      } else {
+        priceDisplay = "${item.costPerUse.toStringAsFixed(2)}€";
+      }
+    }
+
+    int stars = _calculateStars();
+
+    return Column(
+      children: [
+        ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          leading: Hero(
+            tag: "item_img_${item.name}_$index",
+            child: Container(
+              width: 50,
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: isRetro ? const Color(0xFFF4D98D) : Colors.grey.withOpacity(0.1),
+                border: isRetro ? Border.all(color: const Color(0xFF3A2817), width: 1.5) : null,
+                image: item.imagePath != null
+                    ? DecorationImage(image: FileImage(File(item.imagePath!)), fit: BoxFit.cover)
+                    : null,
+              ),
+              child: item.imagePath == null
+                  ? Material(
+                      color: Colors.transparent,
+                      child: Text(item.emoji ?? "📦", style: const TextStyle(fontSize: 28)))
+                  : null,
+            ),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
+                ),
+              ),
+              if (reachedGoal)
+                const Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: Icon(Icons.emoji_events, size: 16, color: Colors.amber),
+                )
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              // STERNE JETZT LINKS UNTER DEM NAMEN
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < stars ? Icons.star_rounded : Icons.star_border_rounded,
+                    size: 14,
+                    color: index < stars ? starColor : Colors.grey.withOpacity(0.3),
+                  );
+                }),
+              ),
+              
+              if (progress != null && !reachedGoal)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, right: 20),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: Colors.grey.withOpacity(0.1),
+                      color: isRetro ? const Color(0xFF6BB8A7) : Colors.blueAccent,
+                      minHeight: 4,
+                    ),
+                  ),
+                )
+            ],
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // PREIS OBEN
+              Text(
+                priceDisplay,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: isRetro && reachedGoal ? const Color(0xFF6BB8A7) : textColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              // NUTZUNG UNTEN (X / Y)
+              Text(
+                usageFraction,
+                style: TextStyle(fontSize: 11, color: subTextColor, fontWeight: FontWeight.bold),
+              )
+            ],
+          ),
+        ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            indent: 82,
+            endIndent: 20,
+            color: isRetro ? const Color(0xFF6BB8A7).withOpacity(0.2) : Colors.white10,
+          ),
+      ],
+    );
   }
-  Widget _badge(IconData icon, Color color, String text) => Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: Row(children: [Icon(icon, size: 10, color: color), const SizedBox(width: 2), Text(text, style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: color))]));
-  String _dateStr(DateTime d) => "${d.day}.${d.month}.${d.year.toString().substring(2)}";
-  Color _getColorForCost(double cost) => cost < 1.0 ? Colors.green : (cost > 5.0 ? Colors.red : Colors.orange);
 }

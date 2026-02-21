@@ -21,18 +21,18 @@ class ItemAdapter extends TypeAdapter<Item> {
       name: fields[1] as String,
       price: fields[2] as double,
       purchaseDate: fields[3] as DateTime,
-      category: fields[4] as String,
-      usageHistory: (fields[5] as List).cast<int>(),
-      manualClicks: fields[6] as int,
-      imagePath: fields[7] as String?,
-      consumedDate: fields[8] as DateTime?,
-      isSubscription: fields[9] as bool,
-      subscriptionPeriod: fields[10] as String?,
-      emoji: fields[11] as String?,
-      projectedLifespanDays: fields[12] as int?,
-      estimatedUsageCount: fields[13] as int,
-      usagePeriod: fields[14] as String,
-      targetCost: fields[15] as double?,
+      estimatedUsageCount: fields[4] as int,
+      usagePeriod: fields[5] as String,
+      isSubscription: fields[6] as bool,
+      subscriptionPeriod: fields[7] as String,
+      emoji: fields[8] as String?,
+      imagePath: fields[9] as String?,
+      category: fields[10] as String,
+      manualClicks: fields[11] as int,
+      consumedDate: fields[12] as DateTime?,
+      targetCost: fields[13] as double?,
+      projectedLifespanDays: fields[14] as int?,
+      usageHistory: (fields[15] as List?)?.cast<int>(),
     );
   }
 
@@ -49,29 +49,29 @@ class ItemAdapter extends TypeAdapter<Item> {
       ..writeByte(3)
       ..write(obj.purchaseDate)
       ..writeByte(4)
-      ..write(obj.category)
-      ..writeByte(5)
-      ..write(obj.usageHistory)
-      ..writeByte(6)
-      ..write(obj.manualClicks)
-      ..writeByte(7)
-      ..write(obj.imagePath)
-      ..writeByte(8)
-      ..write(obj.consumedDate)
-      ..writeByte(9)
-      ..write(obj.isSubscription)
-      ..writeByte(10)
-      ..write(obj.subscriptionPeriod)
-      ..writeByte(11)
-      ..write(obj.emoji)
-      ..writeByte(12)
-      ..write(obj.projectedLifespanDays)
-      ..writeByte(13)
       ..write(obj.estimatedUsageCount)
-      ..writeByte(14)
+      ..writeByte(5)
       ..write(obj.usagePeriod)
+      ..writeByte(6)
+      ..write(obj.isSubscription)
+      ..writeByte(7)
+      ..write(obj.subscriptionPeriod)
+      ..writeByte(8)
+      ..write(obj.emoji)
+      ..writeByte(9)
+      ..write(obj.imagePath)
+      ..writeByte(10)
+      ..write(obj.category)
+      ..writeByte(11)
+      ..write(obj.manualClicks)
+      ..writeByte(12)
+      ..write(obj.consumedDate)
+      ..writeByte(13)
+      ..write(obj.targetCost)
+      ..writeByte(14)
+      ..write(obj.projectedLifespanDays)
       ..writeByte(15)
-      ..write(obj.targetCost);
+      ..write(obj.usageHistory);
   }
 
   @override
