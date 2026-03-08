@@ -51,20 +51,27 @@ class Item extends HiveObject {
   }
 
   double get totalUsesCalculated {
-    // Wenn wir echte Daten haben, zählen nur diese!
-    final int realUses = manualClicks + usageHistory.length;
-    if (realUses > 0) return realUses.toDouble();
-    
-    // Falls das Item nagelneu ist, schätzen wir für die Statistik
-    if (estimatedUsageCount == 0) return 0;
-    double usesPerDay = 0;
-    switch (usagePeriod) {
-      case 'day': usesPerDay = estimatedUsageCount.toDouble(); break;
-      case 'week': usesPerDay = estimatedUsageCount / 7; break;
-      case 'month': usesPerDay = estimatedUsageCount / 30; break;
-      case 'year': usesPerDay = estimatedUsageCount / 365; break;
+    if (estimatedUsageCount > 0) {
+      // 1. SCHÄTZUNGS-MODUS (Automatisch)
+      // Wir rechnen live über die verstrichene Zeit mit Nachkommastellen.
+      double usesPerDay = 0;
+      switch (usagePeriod) {
+        case 'day': usesPerDay = estimatedUsageCount.toDouble(); break;
+        case 'week': usesPerDay = estimatedUsageCount / 7; break;
+        case 'month': usesPerDay = estimatedUsageCount / 30; break;
+        case 'year': usesPerDay = estimatedUsageCount / 365; break;
+      }
+      
+      double estimatedTotal = usesPerDay * daysOwned;
+      
+      // Falls der User (oder die alten Demo-Daten) manuell mehr geklickt haben 
+      // als die Schätzung hergibt, nehmen wir zur Sicherheit den höheren Wert.
+      return max(estimatedTotal, manualClicks.toDouble());
+    } else {
+      // 2. MANUELLER MODUS & ABOS
+      // Nur noch manualClicks zählt! Keine Doppel-Addition mehr mit der history-Länge.
+      return manualClicks.toDouble();
     }
-    return usesPerDay * daysOwned;
   }
 
   double get costPerUse {
@@ -78,7 +85,7 @@ class Item extends HiveObject {
     }
     
     // T-Shirt Logik: Preis geteilt durch Nutzungen
-    // Wir nehmen mindestens 1 Nutzung an, um Division durch 0 zu vermeiden
+    // Wir nehmen mindestens 1 Nutzung an, um astronomische Zahlen / Division durch 0 zu vermeiden
     if (uses <= 1) return price;
     return price / uses;
   }

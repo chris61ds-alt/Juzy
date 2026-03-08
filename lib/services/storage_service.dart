@@ -1,4 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
 import '../models/item.dart';
 
 class StorageService {
@@ -34,4 +35,51 @@ class StorageService {
 
   Map<String, String> getCategoryAliases() => Map<String, String>.from(_settingsBox.get('category_aliases', defaultValue: {}));
   Future<void> saveCategoryAliases(Map<String, String> aliases) async => await _settingsBox.put('category_aliases', aliases);
+
+  // --- Backup / Export & Import ---
+  String exportData() {
+    final items = getAllItems().map((e) => e.toJson()).toList();
+    final customCats = getCustomCategories();
+    final customEmojis = getCustomEmojis();
+    final aliases = getCategoryAliases();
+
+    final backup = {
+      'items': items,
+      'custom_categories': customCats,
+      'custom_emojis': customEmojis,
+      'category_aliases': aliases,
+    };
+
+    return jsonEncode(backup);
+  }
+
+  Future<bool> importData(String jsonString) async {
+    try {
+      final Map<String, dynamic> backup = jsonDecode(jsonString);
+      
+      if (backup.containsKey('items')) {
+        await deleteAllItems(); // Alte Daten werden überschrieben
+        final List<dynamic> itemsList = backup['items'];
+        for (var itemJson in itemsList) {
+          final item = Item.fromJson(Map<String, dynamic>.from(itemJson));
+          await saveItem(item);
+        }
+      }
+
+      if (backup.containsKey('custom_categories')) {
+        await saveCustomCategories(List<String>.from(backup['custom_categories']));
+      }
+
+      if (backup.containsKey('custom_emojis')) {
+        await saveCustomEmojis(Map<String, String>.from(backup['custom_emojis']));
+      }
+
+      if (backup.containsKey('category_aliases')) {
+        await saveCategoryAliases(Map<String, String>.from(backup['category_aliases']));
+      }
+      return true;
+    } catch (e) {
+      return false; // Fehler beim Parsen
+    }
+  }
 }

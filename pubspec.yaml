@@ -1,7 +1,7 @@
 name: value_tracker
 description: JUZY - Cost per Use Tracker
 publish_to: 'none'
-version: 1.1.1+17
+version: 1.1.1+19
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
@@ -14,9 +14,9 @@ dependencies:
   intl: ^0.19.0
   fl_chart: ^0.66.2
   shared_preferences: ^2.2.2
-  path_provider: ^2.1.2
-  file_picker: ^8.0.0
-  share_plus: ^10.0.0
+  path_provider: ^2.1.5
+  file_picker: ^10.3.10
+  share_plus: ^11.0.0
   url_launcher: ^6.2.5
   flutter_local_notifications: ^17.1.0
   timezone: ^0.9.2

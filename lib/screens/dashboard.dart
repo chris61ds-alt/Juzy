@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui' as ui; // Wichtig für das Auslesen der Systemsprache
+import 'dart:ui' as ui; 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 import '../models/item.dart';
 import '../widgets/animations.dart';
@@ -79,7 +83,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     bool isFirstRun = prefs.getBool('first_run') ?? true;
     
     if (isFirstRun) {
-      // Systemsprache auslesen und JUZY entsprechend einstellen
       String sysLang = ui.PlatformDispatcher.instance.locale.languageCode;
       String defaultLang = sysLang.startsWith('de') ? 'de' : 'en';
       
@@ -109,44 +112,60 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return history;
   }
 
-  void _createDemoData() {
+  Future<void> _createDemoData() async {
     DateTime now = DateTime.now();
-    List<Item> demoItems = [];
     DateTime daysAgo(int days) => now.subtract(Duration(days: days));
 
-    // 8 Active Items
-    demoItems.add(Item(name: "MacBook Air M2", price: 1299.00, purchaseDate: daysAgo(365), category: "cat_tech", emoji: "💻", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1825, usageHistory: _generateFakeHistory(300, 365)));
-    demoItems.add(Item(name: "Sofa Retro", price: 899.00, purchaseDate: daysAgo(120), category: "cat_living", emoji: "🛋️", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 3650, usageHistory: _generateFakeHistory(120, 120)));
-    demoItems.add(Item(name: "E-Bike City", price: 2100.00, purchaseDate: daysAgo(60), category: "cat_transport", emoji: "🚲", usagePeriod: "week", estimatedUsageCount: 4, projectedLifespanDays: 1825, usageHistory: _generateFakeHistory(35, 60)));
-    demoItems.add(Item(name: "Winterjacke", price: 150.00, purchaseDate: daysAgo(200), category: "cat_clothes", emoji: "🧥", usagePeriod: "week", estimatedUsageCount: 2, projectedLifespanDays: 1095, usageHistory: _generateFakeHistory(60, 200)));
-    demoItems.add(Item(name: "Sony Kopfhörer", price: 250.00, purchaseDate: daysAgo(400), category: "cat_tech", emoji: "🎧", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1095, usageHistory: _generateFakeHistory(350, 400)));
-    demoItems.add(Item(name: "Schreibtisch", price: 300.00, purchaseDate: daysAgo(800), category: "cat_living", emoji: "🪑", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 3650, usageHistory: _generateFakeHistory(800, 800)));
-    demoItems.add(Item(name: "Laufschuhe", price: 120.00, purchaseDate: daysAgo(45), category: "cat_clothes", emoji: "👟", usagePeriod: "week", estimatedUsageCount: 3, projectedLifespanDays: 365, usageHistory: _generateFakeHistory(20, 45)));
-    demoItems.add(Item(name: "Siebträger", price: 650.00, purchaseDate: daysAgo(100), category: "cat_living", emoji: "☕", usagePeriod: "day", estimatedUsageCount: 2, projectedLifespanDays: 1825, usageHistory: _generateFakeHistory(190, 100)));
+    // Vorher alles putzen
+    await _storage.deleteAllItems();
+    setState(() { _items = []; });
 
-    // 4 Archived Items
-    demoItems.add(Item(name: "Altes iPhone 11", price: 799.00, purchaseDate: daysAgo(1500), category: "cat_tech", emoji: "📱", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1095, consumedDate: daysAgo(10), usageHistory: _generateFakeHistory(1400, 1500))); 
-    demoItems.add(Item(name: "Sneakers (Kaputt)", price: 90.00, purchaseDate: daysAgo(400), category: "cat_clothes", emoji: "👟", usagePeriod: "week", estimatedUsageCount: 4, projectedLifespanDays: 730, consumedDate: daysAgo(50), usageHistory: _generateFakeHistory(180, 350))); 
-    demoItems.add(Item(name: "Standmixer", price: 40.00, purchaseDate: daysAgo(800), category: "cat_food", emoji: "🥤", usagePeriod: "week", estimatedUsageCount: 1, projectedLifespanDays: 1095, consumedDate: daysAgo(200), usageHistory: _generateFakeHistory(80, 600))); 
-    demoItems.add(Item(name: "Monitor 24 Zoll", price: 150.00, purchaseDate: daysAgo(2000), category: "cat_tech", emoji: "🖥️", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1825, consumedDate: daysAgo(100), usageHistory: _generateFakeHistory(1800, 1900))); 
-
-    // 6 Active Subs
-    demoItems.add(Item(name: "Netflix Premium", price: 17.99, purchaseDate: daysAgo(180), category: "cat_entertainment", emoji: "🍿", isSubscription: true, subscriptionPeriod: "month", manualClicks: 120, targetCost: 0.50, usageHistory: _generateFakeHistory(120, 180)));
-    demoItems.add(Item(name: "Spotify Duo", price: 12.99, purchaseDate: daysAgo(400), category: "cat_entertainment", emoji: "🎵", isSubscription: true, subscriptionPeriod: "month", manualClicks: 350, targetCost: 0.10, usageHistory: _generateFakeHistory(350, 400)));
-    demoItems.add(Item(name: "Gym Membership", price: 45.00, purchaseDate: daysAgo(300), category: "cat_health", emoji: "💪", isSubscription: true, subscriptionPeriod: "month", manualClicks: 90, targetCost: 3.00, usageHistory: _generateFakeHistory(90, 300)));
-    demoItems.add(Item(name: "Amazon Prime", price: 8.99, purchaseDate: daysAgo(600), category: "cat_misc", emoji: "📦", isSubscription: true, subscriptionPeriod: "month", manualClicks: 200, targetCost: 0.50, usageHistory: _generateFakeHistory(200, 600)));
-    demoItems.add(Item(name: "iCloud 2TB", price: 9.99, purchaseDate: daysAgo(800), category: "cat_tech", emoji: "☁️", isSubscription: true, subscriptionPeriod: "month", manualClicks: 800, targetCost: 0.05, usageHistory: _generateFakeHistory(800, 800)));
-    demoItems.add(Item(name: "Haftpflicht", price: 5.50, purchaseDate: daysAgo(1000), category: "cat_insurance", emoji: "🛡️", isSubscription: true, subscriptionPeriod: "month", manualClicks: 10, targetCost: 10.00, usageHistory: _generateFakeHistory(10, 1000)));
-
-    // 3 Archived Subs
-    demoItems.add(Item(name: "VPN Service", price: 4.99, purchaseDate: daysAgo(500), category: "cat_tech", emoji: "🔒", isSubscription: true, subscriptionPeriod: "month", manualClicks: 40, targetCost: 0.20, consumedDate: daysAgo(100), usageHistory: _generateFakeHistory(40, 400)));
-    demoItems.add(Item(name: "Xbox Game Pass", price: 14.99, purchaseDate: daysAgo(300), category: "cat_entertainment", emoji: "🎮", isSubscription: true, subscriptionPeriod: "month", manualClicks: 15, targetCost: 1.00, consumedDate: daysAgo(60), usageHistory: _generateFakeHistory(15, 240))); 
-    demoItems.add(Item(name: "Zeit Magazin", price: 29.90, purchaseDate: daysAgo(200), category: "cat_entertainment", emoji: "📰", isSubscription: true, subscriptionPeriod: "month", manualClicks: 8, targetCost: 2.00, consumedDate: daysAgo(20), usageHistory: _generateFakeHistory(8, 180)));
-
-    for (var item in demoItems) {
-      _storage.saveItem(item);
+    // Diese Hilfsfunktion wartet 10 Millisekunden, damit jedes Item einen
+    // zu 100% einzigartigen Zeitstempel als ID bekommt und nichts überschrieben wird.
+    Future<void> addDemo(Item item) async {
+      await _storage.saveItem(item);
+      await Future.delayed(const Duration(milliseconds: 10));
     }
-    _loadData();
+
+    // --- ALTE DEMO DATEN ---
+    await addDemo(Item(name: "MacBook Air M2", price: 1299.00, purchaseDate: daysAgo(365), category: "cat_tech", emoji: "💻", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1825, manualClicks: 300, usageHistory: _generateFakeHistory(300, 365)));
+    await addDemo(Item(name: "Sofa Retro", price: 899.00, purchaseDate: daysAgo(120), category: "cat_living", emoji: "🛋️", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 3650, manualClicks: 120, usageHistory: _generateFakeHistory(120, 120)));
+    await addDemo(Item(name: "E-Bike City", price: 2100.00, purchaseDate: daysAgo(60), category: "cat_transport", emoji: "🚲", usagePeriod: "week", estimatedUsageCount: 4, projectedLifespanDays: 1825, manualClicks: 35, usageHistory: _generateFakeHistory(35, 60)));
+    await addDemo(Item(name: "Winterjacke", price: 150.00, purchaseDate: daysAgo(200), category: "cat_clothes", emoji: "🧥", usagePeriod: "week", estimatedUsageCount: 2, projectedLifespanDays: 1095, manualClicks: 60, usageHistory: _generateFakeHistory(60, 200)));
+    await addDemo(Item(name: "Sony Kopfhörer", price: 250.00, purchaseDate: daysAgo(400), category: "cat_tech", emoji: "🎧", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1095, manualClicks: 350, usageHistory: _generateFakeHistory(350, 400)));
+    await addDemo(Item(name: "Schreibtisch", price: 300.00, purchaseDate: daysAgo(800), category: "cat_living", emoji: "🪑", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 3650, manualClicks: 800, usageHistory: _generateFakeHistory(800, 800)));
+    await addDemo(Item(name: "Laufschuhe", price: 120.00, purchaseDate: daysAgo(45), category: "cat_clothes", emoji: "👟", usagePeriod: "week", estimatedUsageCount: 3, projectedLifespanDays: 365, manualClicks: 20, usageHistory: _generateFakeHistory(20, 45)));
+
+    await addDemo(Item(name: "Altes iPhone 11", price: 799.00, purchaseDate: daysAgo(1500), category: "cat_tech", emoji: "📱", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1095, consumedDate: daysAgo(10), manualClicks: 1400, usageHistory: _generateFakeHistory(1400, 1500))); 
+    await addDemo(Item(name: "Sneakers (Kaputt)", price: 90.00, purchaseDate: daysAgo(400), category: "cat_clothes", emoji: "👟", usagePeriod: "week", estimatedUsageCount: 4, projectedLifespanDays: 730, consumedDate: daysAgo(50), manualClicks: 180, usageHistory: _generateFakeHistory(180, 350))); 
+    await addDemo(Item(name: "Standmixer", price: 40.00, purchaseDate: daysAgo(800), category: "cat_food", emoji: "🥤", usagePeriod: "week", estimatedUsageCount: 1, projectedLifespanDays: 1095, consumedDate: daysAgo(200), manualClicks: 80, usageHistory: _generateFakeHistory(80, 600))); 
+    await addDemo(Item(name: "Monitor 24 Zoll", price: 150.00, purchaseDate: daysAgo(2000), category: "cat_tech", emoji: "🖥️", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 1825, consumedDate: daysAgo(100), manualClicks: 1800, usageHistory: _generateFakeHistory(1800, 1900))); 
+
+    await addDemo(Item(name: "Netflix Premium", price: 17.99, purchaseDate: daysAgo(180), category: "cat_entertainment", emoji: "🍿", isSubscription: true, subscriptionPeriod: "month", manualClicks: 120, targetCost: 0.50, usageHistory: _generateFakeHistory(120, 180)));
+    await addDemo(Item(name: "Spotify Duo", price: 12.99, purchaseDate: daysAgo(400), category: "cat_entertainment", emoji: "🎵", isSubscription: true, subscriptionPeriod: "month", manualClicks: 350, targetCost: 0.10, usageHistory: _generateFakeHistory(350, 400)));
+    await addDemo(Item(name: "Gym Membership", price: 45.00, purchaseDate: daysAgo(300), category: "cat_health", emoji: "💪", isSubscription: true, subscriptionPeriod: "month", manualClicks: 90, targetCost: 3.00, usageHistory: _generateFakeHistory(90, 300)));
+    await addDemo(Item(name: "Amazon Prime", price: 8.99, purchaseDate: daysAgo(600), category: "cat_misc", emoji: "📦", isSubscription: true, subscriptionPeriod: "month", manualClicks: 200, targetCost: 0.50, usageHistory: _generateFakeHistory(200, 600)));
+    await addDemo(Item(name: "iCloud 2TB", price: 9.99, purchaseDate: daysAgo(800), category: "cat_tech", emoji: "☁️", isSubscription: true, subscriptionPeriod: "month", manualClicks: 800, targetCost: 0.05, usageHistory: _generateFakeHistory(800, 800)));
+    await addDemo(Item(name: "Haftpflicht", price: 5.50, purchaseDate: daysAgo(1000), category: "cat_insurance", emoji: "🛡️", isSubscription: true, subscriptionPeriod: "month", manualClicks: 10, targetCost: 10.00, usageHistory: _generateFakeHistory(10, 1000)));
+
+    await addDemo(Item(name: "VPN Service", price: 4.99, purchaseDate: daysAgo(500), category: "cat_tech", emoji: "🔒", isSubscription: true, subscriptionPeriod: "month", manualClicks: 40, targetCost: 0.20, consumedDate: daysAgo(100), usageHistory: _generateFakeHistory(40, 400)));
+    await addDemo(Item(name: "Xbox Game Pass", price: 14.99, purchaseDate: daysAgo(300), category: "cat_entertainment", emoji: "🎮", isSubscription: true, subscriptionPeriod: "month", manualClicks: 15, targetCost: 1.00, consumedDate: daysAgo(60), usageHistory: _generateFakeHistory(15, 240))); 
+    await addDemo(Item(name: "Zeit Magazin", price: 29.90, purchaseDate: daysAgo(200), category: "cat_entertainment", emoji: "📰", isSubscription: true, subscriptionPeriod: "month", manualClicks: 8, targetCost: 2.00, consumedDate: daysAgo(20), usageHistory: _generateFakeHistory(8, 180)));
+
+    // --- DIE 6 MARKEN-SHIRTS DES AHA-EFFEKTS (Alle 50x getragen) ---
+    await addDemo(Item(name: "Primark Basic Shirt", price: 5.00, purchaseDate: daysAgo(60), category: "cat_clothes", emoji: "👕", usagePeriod: "week", estimatedUsageCount: 0, projectedLifespanDays: 180, manualClicks: 50, usageHistory: _generateFakeHistory(50, 60)));
+    await addDemo(Item(name: "H&M Slim Fit Shirt", price: 15.00, purchaseDate: daysAgo(150), category: "cat_clothes", emoji: "👕", usagePeriod: "week", estimatedUsageCount: 0, projectedLifespanDays: 365, manualClicks: 50, usageHistory: _generateFakeHistory(50, 150)));
+    await addDemo(Item(name: "Zara Struktur-Shirt", price: 25.00, purchaseDate: daysAgo(300), category: "cat_clothes", emoji: "👕", usagePeriod: "week", estimatedUsageCount: 0, projectedLifespanDays: 730, manualClicks: 50, usageHistory: _generateFakeHistory(50, 300)));
+    await addDemo(Item(name: "Levi's Batwing Logo Shirt", price: 35.00, purchaseDate: daysAgo(547), category: "cat_clothes", emoji: "👕", usagePeriod: "week", estimatedUsageCount: 0, projectedLifespanDays: 1095, manualClicks: 50, usageHistory: _generateFakeHistory(50, 547)));
+    await addDemo(Item(name: "Carhartt WIP Heavyweight Shirt", price: 45.00, purchaseDate: daysAgo(730), category: "cat_clothes", emoji: "👕", usagePeriod: "week", estimatedUsageCount: 0, projectedLifespanDays: 1460, manualClicks: 50, usageHistory: _generateFakeHistory(50, 730)));
+    await addDemo(Item(name: "Ralph Lauren Custom Fit", price: 60.00, purchaseDate: daysAgo(1095), category: "cat_clothes", emoji: "👕", usagePeriod: "week", estimatedUsageCount: 0, projectedLifespanDays: 1825, manualClicks: 50, usageHistory: _generateFakeHistory(50, 1095)));
+
+    // --- NEUE HIGHLIGHT ITEMS ---
+    await addDemo(Item(name: "Siebträger Espressomaschine", price: 750.00, purchaseDate: daysAgo(400), category: "cat_living", emoji: "☕", usagePeriod: "day", estimatedUsageCount: 2, projectedLifespanDays: 3650, manualClicks: 800, usageHistory: _generateFakeHistory(800, 400)));
+    await addDemo(Item(name: "Emma Matratze", price: 800.00, purchaseDate: daysAgo(1000), category: "cat_living", emoji: "🛌", usagePeriod: "day", estimatedUsageCount: 1, projectedLifespanDays: 3650, manualClicks: 1000, usageHistory: _generateFakeHistory(1000, 1000)));
+    await addDemo(Item(name: "Gravel Bike", price: 1800.00, purchaseDate: daysAgo(200), category: "cat_transport", emoji: "🚲", usagePeriod: "week", estimatedUsageCount: 3, projectedLifespanDays: 1825, manualClicks: 85, usageHistory: _generateFakeHistory(85, 200)));
+
+    await _loadData();
   }
 
   void _showOnboardingDialog(SharedPreferences prefs) {
@@ -242,6 +261,74 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     }); 
   }
 
+  Future<void> _exportData() async {
+    try {
+      final jsonString = _storage.exportData();
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/juzy_backup.json');
+      await file.writeAsString(jsonString);
+      
+      if (!mounted) return;
+      final rect = Rect.fromLTWH(0, 0, MediaQuery.of(context).size.width, MediaQuery.of(context).size.height / 2);
+      
+      // ignore: deprecated_member_use
+      await Share.shareXFiles([XFile(file.path)], text: 'JUZY Backup', sharePositionOrigin: rect);
+    } catch (e) {
+      debugPrint("Export failed: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fehler beim Exportieren"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _importData() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Backup importieren?"),
+            content: const Text("Achtung: Alle aktuellen Einträge und Einstellungen werden durch das Backup ersetzt. Fortfahren?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(T.get('cancel').isEmpty ? "Abbrechen" : T.get('cancel'))),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  File file = File(result.files.single.path!);
+                  String jsonString = await file.readAsString();
+                  bool success = await _storage.importData(jsonString);
+                  
+                  if (success) {
+                    await _loadData();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Daten erfolgreich importiert!"), backgroundColor: Colors.green));
+                    Navigator.pop(context); // Schließt die Einstellungen
+                  } else {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fehler beim Importieren der Datei."), backgroundColor: Colors.red));
+                  }
+                },
+                child: const Text("Überschreiben")
+              )
+            ]
+          )
+        );
+      }
+    } catch (e) {
+      debugPrint("Import failed: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fehler beim Importieren"), backgroundColor: Colors.red));
+      }
+    }
+  }
+
   void _renameCategory(String originalKey) {
     HapticFeedback.selectionClick();
     String currentName = _categoryAliases[originalKey] ?? (originalKey.startsWith('cat_') ? T.get(originalKey) : originalKey);
@@ -258,6 +345,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   void _incrementUsage(Item item) { 
     HapticFeedback.mediumImpact(); 
+    if (item.estimatedUsageCount > 0 && item.manualClicks < item.totalUsesCalculated) {
+      item.manualClicks = item.totalUsesCalculated.toInt();
+    }
     item.manualClicks++; 
     item.usageHistory.add(DateTime.now().millisecondsSinceEpoch); 
     item.save();
@@ -322,7 +412,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     final colorScheme = Theme.of(context).colorScheme;
     final isRetro = widget.currentTheme == 'retro';
     final fabColor = isRetro ? _juzyColor : colorScheme.primary;
-    final dailyBurnTextStyle = isRetro ? const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Color(0xFFD4522A), height: 1.0, shadows: [Shadow(offset: Offset(2, 2), color: Color(0xFFF2B84B)), Shadow(offset: Offset(3, 3), color: Color(0xFF6BB8A7))]) : TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white);
+    final dailyBurnTextStyle = isRetro ? const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: const Color(0xFFD4522A), height: 1.0, shadows: [Shadow(offset: Offset(2, 2), color: const Color(0xFFF2B84B)), Shadow(offset: Offset(3, 3), color: const Color(0xFF6BB8A7))]) : TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.white);
     final happyBackground = isRetro ? const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFFF9F3E6), Color(0xFFF5F5DC)], begin: Alignment.topCenter, end: Alignment.bottomCenter)) : null;
 
     return Scaffold(
@@ -336,7 +426,21 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         centerTitle: true,
         actions: [
           IconButton(icon: Icon(_isSearching ? Icons.close : Icons.search), onPressed: () { HapticFeedback.selectionClick(); setState(() { _isSearching = !_isSearching; if (!_isSearching) { _searchQuery = ""; _searchController.clear(); } }); }),
-          if (!_isSearching) IconButton(icon: const Icon(Icons.settings), onPressed: () { HapticFeedback.selectionClick(); Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(onThemeChanged: widget.onThemeChanged, currentTheme: widget.currentTheme, onDeleteAllData: _deleteAllData, onLanguageChanged: widget.onLanguageChanged, onLoadDemoData: () { _createDemoData(); setState(() {}); }))).then((_) => _loadData()); })
+          if (!_isSearching) IconButton(
+            icon: const Icon(Icons.settings), 
+            onPressed: () { 
+              HapticFeedback.selectionClick(); 
+              Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(
+                onThemeChanged: widget.onThemeChanged, 
+                currentTheme: widget.currentTheme, 
+                onDeleteAllData: _deleteAllData, 
+                onLanguageChanged: widget.onLanguageChanged, 
+                onLoadDemoData: () { _createDemoData(); },
+                onExportData: _exportData,
+                onImportData: _importData,
+              ))).then((_) => _loadData()); 
+            }
+          )
         ],
       ),
       body: Container(decoration: happyBackground, child: SafeArea(child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: Column(children: [
@@ -393,7 +497,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             ...keys.asMap().entries.map((entry) {
               return StaggeredSlide(delay: entry.key * 50, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Padding(padding: const EdgeInsets.only(left: 8, bottom: 6, top: 12), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text((_categoryAliases[entry.value] ?? (entry.value.startsWith('cat_') ? T.get(entry.value) : entry.value)).toUpperCase(), style: TextStyle(color: headerColor, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.0)), IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints(), icon: Icon(Icons.edit, size: 14, color: Colors.grey.withValues(alpha: 0.5)), onPressed: () => _renameCategory(entry.value))])),
-                  Container(margin: const EdgeInsets.only(bottom: 15), clipBehavior: Clip.hardEdge, decoration: isRetro ? BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF6BB8A7), width: 3), boxShadow: const [BoxShadow(color: Color(0xFFD4522A), offset: Offset(4, 4), blurRadius: 0)]) : BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).brightness == Brightness.light ? Colors.black12 : Colors.white10), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.light ? 0.08 : 0.2), blurRadius: 10, offset: const Offset(0, 4))]), child: Column(children: grouped[entry.value]!.map((item) { final realIndex = _items.indexOf(item); return ItemTile(item: item, index: realIndex, isLast: item == grouped[entry.value]!.last, avgCost: avgCost, showDailyRates: applyDailyRate, isRetro: isRetro, onTap: () => _openDetail(item, realIndex)); }).toList())),
+                  Container(margin: const EdgeInsets.only(bottom: 15), clipBehavior: Clip.hardEdge, decoration: isRetro ? BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF6BB8A7), width: 3), boxShadow: [BoxShadow(color: const Color(0xFFD4522A), offset: const Offset(4, 4), blurRadius: 0)]) : BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).brightness == Brightness.light ? Colors.black12 : Colors.white10), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.light ? 0.08 : 0.2), blurRadius: 10, offset: const Offset(0, 4))]), child: Column(children: grouped[entry.value]!.map((item) { final realIndex = _items.indexOf(item); return ItemTile(item: item, index: realIndex, isLast: item == grouped[entry.value]!.last, avgCost: avgCost, showDailyRates: applyDailyRate, isRetro: isRetro, onTap: () => _openDetail(item, realIndex)); }).toList())),
                 ]));
             }),
             if (archivedItems.isNotEmpty) ...[
@@ -407,7 +511,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             ], 
             const SizedBox(height: 60)
         ]),
-        if (hasToggle) Positioned(top: 10, right: 20, child: GestureDetector(onTap: () { HapticFeedback.selectionClick(); setState(() => _showDailyRates = !_showDailyRates); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor.withValues(alpha: 0.5))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.swap_horiz, size: 14, color: _juzyColor), const SizedBox(width: 6), Text(_showDailyRates ? T.get('view_daily') : T.get('view_usage'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _juzyColor))])))),
+        if (hasToggle) Positioned(top: 10, right: 20, child: GestureDetector(onTap: () { HapticFeedback.selectionClick(); setState(() => _showDailyRates = !_showDailyRates); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: _juzyColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: _juzyColor.withValues(alpha: 0.5))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.swap_horiz, size: 14, color: _juzyColor), const SizedBox(width: 6), Text(_showDailyRates ? "Ansicht: Jahr" : "Ansicht: Nutzung", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: _juzyColor))])))),
     ]);
   }
 
@@ -552,7 +656,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         ),
         const SizedBox(height: 20),
 
-        ...raceItems.map((item) {
+        ...raceItems.map<Widget>((item) {
           int planned = item.projectedLifespanDays ?? 365;
           int actual = item.daysOwned;
           
@@ -599,7 +703,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               ],
             ),
           );
-        }),
+        }).toList(),
       ],
     );
   }
@@ -674,7 +778,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       onUsageAdd: () => _incrementUsage(item), 
       onUsageCorrect: (n) => _updateUsageCount(item, n), 
       onArchive: () { _archiveItem(item); Navigator.pop(context); }, 
-      onRestore: () => _restoreItem(item) 
+      onRestore: () { _restoreItem(item); Navigator.pop(context); } 
     )));
   }
 

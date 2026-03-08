@@ -4,7 +4,6 @@ import 'models/item.dart';
 import 'screens/dashboard.dart';
 import 'utils/translations.dart';
 import 'services/storage_service.dart';
-import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

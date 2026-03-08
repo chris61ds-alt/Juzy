@@ -24,7 +24,9 @@ class ItemTile extends StatelessWidget {
   });
 
   int _calculateStars() {
-    if (item.daysOwned < 3 && item.manualClicks < 5) return 5;
+    // Welpenschutz entfernt! Wenn das Item noch gar nicht genutzt wurde: 0 Sterne (unbewertet)
+    if (item.totalUsesCalculated == 0) return 0;
+
     if (item.targetCost != null && item.targetCost! > 0) {
       double ratio = item.costPerUse / item.targetCost!;
       if (ratio <= 1.0) return 5;
@@ -33,6 +35,7 @@ class ItemTile extends StatelessWidget {
       if (ratio <= 1.75) return 2;
       return 1;
     }
+    
     if (!item.isSubscription && item.projectedLifespanDays != null) {
       double ratio = item.daysOwned / item.projectedLifespanDays!;
       if (ratio >= 1.0) return 5; 
@@ -41,8 +44,13 @@ class ItemTile extends StatelessWidget {
       if (ratio >= 0.2) return 2;
       return 1;
     }
-    if (item.totalUsesCalculated > 0) return 4;
-    return 2;
+    
+    // Fallback: 3 Sterne (Neutral), wenn es genutzt wird, aber keine Ziele definiert sind
+    return 3; 
+  }
+
+  String _formatUsage(double val) {
+    return (val % 1 == 0) ? val.toInt().toString() : val.toStringAsFixed(1);
   }
 
   @override
@@ -58,8 +66,13 @@ class ItemTile extends StatelessWidget {
 
     // 1. Anzeige für Abos
     if (item.isSubscription) {
-        // Bei Abos zeigen wir das Intervall
-        usageFraction = item.subscriptionPeriod == 'year' ? T.get('yearly') : T.get('monthly');
+        if (showDailyRates) {
+          // In der Jahres-Ansicht zeigen wir das eigentliche Abrechnungsintervall an
+          usageFraction = item.subscriptionPeriod == 'year' ? T.get('yearly') : T.get('monthly');
+        } else {
+          // In der Nutzungs-Ansicht zeigen wir die tatsächlichen Klicks an (wie oft wurde z.B. Netflix geguckt)
+          usageFraction = "${_formatUsage(item.totalUsesCalculated)} ${T.get('times_used')}";
+        }
     } 
     // 2. Anzeige für Items mit Ziel (z.B. "12 / 100")
     else if (item.targetCost != null && item.targetCost! > 0) {
@@ -70,25 +83,28 @@ class ItemTile extends StatelessWidget {
       progress = currentUses / neededUses;
       if (progress >= 1.0) reachedGoal = true;
       
-      // Formatierung: Keine Nachkommastellen bei Nutzungen
-      usageFraction = "${currentUses.toInt()} / ${neededUses.toInt()}"; 
+      // Formatierung: 1 Nachkommastelle bei Schätzungen, glatt bei manueller Nutzung
+      usageFraction = "${_formatUsage(currentUses)} / ${_formatUsage(neededUses)}"; 
     } 
-    // 3. Fallback Items ohne Ziel (z.B. "12 genutzt")
+    // 3. Fallback Items ohne Ziel (z.B. "12.5 genutzt")
     else {
-      usageFraction = "${item.totalUsesCalculated.toInt()} ${T.get('times_used')}";
+      usageFraction = "${_formatUsage(item.totalUsesCalculated)} ${T.get('times_used')}";
     }
 
     // Preisanzeige
     String priceDisplay;
     
     if (showDailyRates) {
-      priceDisplay = "${item.pricePerDay.toStringAsFixed(2)}${T.currency} /${T.get('days')}";
-    } else {
       if (item.isSubscription) {
-        priceDisplay = "${item.price.toStringAsFixed(2)}${T.currency}";
+        // Schock-Faktor: Jahreskosten für Abos berechnen!
+        double yearlyCost = item.subscriptionPeriod == 'year' ? item.price : item.price * 12;
+        priceDisplay = "${yearlyCost.toStringAsFixed(2)}${T.currency} / Jahr";
       } else {
-        priceDisplay = "${item.costPerUse.toStringAsFixed(2)}${T.currency}";
+        priceDisplay = "${item.pricePerDay.toStringAsFixed(2)}${T.currency} /${T.get('days')}";
       }
+    } else {
+      // Die Magie: Hier zeigen wir jetzt auch für Abos die echten Kosten PRO NUTZUNG an!
+      priceDisplay = "${item.costPerUse.toStringAsFixed(2)}${T.currency}";
     }
 
     int stars = _calculateStars();
@@ -141,7 +157,6 @@ class ItemTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 4),
-              // STERNE JETZT LINKS UNTER DEM NAMEN
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(5, (index) {
@@ -157,7 +172,7 @@ class ItemTile extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 6, right: 20),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(2),
                     child: LinearProgressIndicator(
                       value: progress,
                       backgroundColor: Colors.grey.withValues(alpha: 0.1),
@@ -172,7 +187,6 @@ class ItemTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // PREIS OBEN
               Text(
                 priceDisplay,
                 style: TextStyle(
@@ -182,7 +196,6 @@ class ItemTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              // NUTZUNG UNTEN (X / Y)
               Text(
                 usageFraction,
                 style: TextStyle(fontSize: 11, color: subTextColor, fontWeight: FontWeight.bold),

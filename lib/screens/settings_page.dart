@@ -9,6 +9,8 @@ class SettingsPage extends StatefulWidget {
   final String currentTheme;
   final VoidCallback onDeleteAllData;
   final VoidCallback onLoadDemoData;
+  final VoidCallback? onExportData;
+  final VoidCallback? onImportData;
 
   const SettingsPage({
     super.key,
@@ -17,6 +19,8 @@ class SettingsPage extends StatefulWidget {
     required this.onDeleteAllData,
     required this.onLanguageChanged,
     required this.onLoadDemoData,
+    this.onExportData,
+    this.onImportData,
   });
 
   @override
@@ -32,7 +36,7 @@ class _SettingsPageState extends State<SettingsPage> {
         mainAxisSize: MainAxisSize.min,
         children: ['€', '\$', '£', '¥', 'CHF'].map((c) => ListTile(
           title: Text(c, style: const TextStyle(fontSize: 20)),
-          trailing: T.currency == c ? const Icon(Icons.check, color: Color(0xFF6BB8A7)) : null,
+          trailing: T.currency == c ? const Icon(Icons.check, color: const Color(0xFF6BB8A7)) : null,
           onTap: () {
             T.setCurrency(c);
             setState((){});
@@ -43,10 +47,21 @@ class _SettingsPageState extends State<SettingsPage> {
     ));
   }
 
-  void _requestReview() async {
+  void _requestReview(BuildContext context) async {
     final InAppReview inAppReview = InAppReview.instance;
-    if (await inAppReview.isAvailable()) {
-      inAppReview.requestReview();
+    try {
+      // openStoreListing leitet den User zu 100% direkt in den Play Store / App Store weiter, 
+      // anstatt auf ein unzuverlässiges In-App-Popup zu warten.
+      await inAppReview.openStoreListing();
+    } catch (e) {
+      debugPrint("Review Error: $e");
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Fehler beim Öffnen des Stores."),
+          backgroundColor: Colors.red,
+        )
+      );
     }
   }
 
@@ -84,12 +99,38 @@ class _SettingsPageState extends State<SettingsPage> {
                 )
               ]),
               _buildSection(context, T.get('data_management'), cardColor, [
-                ListTile(leading: const Icon(Icons.playlist_add, color: Colors.orange), title: Text(T.get('load_demo')), onTap: () { widget.onLoadDemoData(); Navigator.pop(context); }),
+                ListTile(
+                  leading: const Icon(Icons.upload_file, color: Colors.blue), 
+                  title: Text(T.get('export_data').isEmpty ? "Daten exportieren" : T.get('export_data')), 
+                  onTap: () { 
+                    if (widget.onExportData != null) widget.onExportData!(); 
+                  }
+                ),
+                ListTile(
+                  leading: const Icon(Icons.download, color: Colors.green), 
+                  title: Text(T.get('import_data').isEmpty ? "Daten importieren" : T.get('import_data')), 
+                  onTap: () { 
+                    if (widget.onImportData != null) widget.onImportData!(); 
+                  }
+                ),
                 const Divider(),
-                ListTile(leading: const Icon(Icons.delete_forever, color: Colors.red), title: Text(T.get('delete_all_data'), style: const TextStyle(color: Colors.red)), onTap: () => _confirmDelete(context)),
+                ListTile(
+                  leading: const Icon(Icons.playlist_add, color: Colors.orange), 
+                  title: Text(T.get('load_demo')), 
+                  onTap: () { 
+                    widget.onLoadDemoData(); 
+                    Navigator.pop(context); 
+                  }
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.delete_forever, color: Colors.red), 
+                  title: Text(T.get('delete_all_data'), style: const TextStyle(color: Colors.red)), 
+                  onTap: () => _confirmDelete(context)
+                ),
               ]),
               _buildSection(context, T.get('legal'), cardColor, [
-                _buildTile(Icons.star_rate_rounded, T.get('rate_app'), false, _requestReview, iconColor: Colors.amber),
+                _buildTile(Icons.star_rate_rounded, T.get('rate_app'), false, () => _requestReview(context), iconColor: Colors.amber),
                 _buildTile(Icons.privacy_tip_outlined, T.get('privacy_policy'), false, () async { final Uri url = Uri.parse("https://chris61ds-alt.github.io/Juzy-Legal/"); if (!await launchUrl(url)) debugPrint('Could not launch privacy'); }),
               ]),
             ],
@@ -108,7 +149,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildTile(IconData icon, String title, bool isSelected, VoidCallback onTap, {Color? iconColor}) {
-    return ListTile(leading: Icon(icon, color: iconColor), title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)), trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF6BB8A7)) : null, onTap: onTap);
+    return ListTile(leading: Icon(icon, color: iconColor), title: Text(title, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)), trailing: isSelected ? const Icon(Icons.check_circle, color: const Color(0xFF6BB8A7)) : null, onTap: onTap);
   }
 
   void _confirmDelete(BuildContext context) {

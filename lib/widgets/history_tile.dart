@@ -15,6 +15,10 @@ class HistoryTile extends StatelessWidget {
     required this.onTap,
   });
 
+  String _formatUsage(double val) {
+    return (val % 1 == 0) ? val.toInt().toString() : val.toStringAsFixed(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final textColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black;
@@ -67,7 +71,7 @@ class HistoryTile extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
                   ),
                   Text(
-                    "${item.totalUsesCalculated.toInt()} ${T.get('times_used')}",
+                    "${_formatUsage(item.totalUsesCalculated)} ${T.get('times_used')}",
                     style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.8)),
                   )
                 ],

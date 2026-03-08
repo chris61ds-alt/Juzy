@@ -219,7 +219,6 @@ class T {
       'year': 'Jahr',
       'per_day': 'Tag',
       'per_week': 'Woche',
-      'per_month': 'Monat',
       'per_year': 'Jahr',
       'days': 'Tage',
       'months': 'Monate',

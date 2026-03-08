@@ -47,8 +47,26 @@ class _ItemDetailPageState extends State<ItemDetailPage> with TickerProviderStat
   @override
   void dispose() { _controller.dispose(); _bumpController.dispose(); super.dispose(); }
   
-  void _handleUsageAdd() { _bumpController.forward(from: 0.0); setState(() { widget.item.usageHistory.add(DateTime.now().millisecondsSinceEpoch); }); Future.microtask(() => widget.onUsageAdd()); }
-  void _handleCorrection(int delta) { if (widget.item.manualClicks + delta >= 0) { if (delta < 0 && widget.item.usageHistory.isNotEmpty) { widget.item.usageHistory.removeLast(); } widget.onUsageCorrect(widget.item.manualClicks + delta); setState(() {}); } }
+  void _handleUsageAdd() { 
+    _bumpController.forward(from: 0.0); 
+    widget.onUsageAdd();
+    setState(() {}); 
+  }
+  
+  void _handleCorrection(int delta) { 
+    // Synchronisiere Zähler zuerst, falls das Item auf Schätzung stand
+    if (widget.item.estimatedUsageCount > 0 && widget.item.manualClicks < widget.item.totalUsesCalculated) {
+      widget.item.manualClicks = widget.item.totalUsesCalculated.toInt();
+    }
+    
+    if (widget.item.manualClicks + delta >= 0) { 
+      if (delta < 0 && widget.item.usageHistory.isNotEmpty) { 
+        widget.item.usageHistory.removeLast(); 
+      } 
+      widget.onUsageCorrect(widget.item.manualClicks + delta); 
+      setState(() {}); 
+    } 
+  }
 
   String _getLastUsedText() {
     final lastUsed = widget.item.lastUsedDate;
@@ -109,7 +127,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> with TickerProviderStat
                           StaggeredSlide(delay: 700, child: Row(children: [
                             Expanded(child: _buildBigStat(context: context, label: T.get('cost_per_use'), value: widget.item.costPerUse, color: colorScheme.primary, isRetro: isRetro, suffix: " ${T.currency}", animation: _bumpDownAnimation)), 
                             const SizedBox(width: 15), 
-                            Expanded(child: _buildBigStat(context: context, label: T.get('usages'), value: usageVal, color: colorScheme.secondary, isRetro: isRetro, suffix: "", animation: _bumpUpAnimation, decimals: 0))
+                            Expanded(child: _buildBigStat(context: context, label: T.get('usages'), value: usageVal, color: colorScheme.secondary, isRetro: isRetro, suffix: "", animation: _bumpUpAnimation, decimals: 1))
                           ])),
                           if (!widget.item.isSubscription && widget.item.lastUsedDate != null) Padding(padding: const EdgeInsets.only(top: 15), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.history, size: 14, color: Colors.grey.withValues(alpha: 0.6)), const SizedBox(width: 5), Text("${T.get('last_used')} ${_getLastUsedText()}", style: TextStyle(fontSize: 12, color: Colors.grey.withValues(alpha: 0.8), fontStyle: FontStyle.italic))])),
                           const SizedBox(height: 35),
@@ -248,10 +266,13 @@ class _ItemDetailPageState extends State<ItemDetailPage> with TickerProviderStat
   Widget _buildChartToggleBtn(String label, String value, Color activeColor, bool isRetro) { bool isSelected = _chartView == value; return GestureDetector(onTap: () => setState(() => _chartView = value), child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: isSelected ? (isRetro ? const Color(0xFFD4522A) : activeColor) : Colors.transparent, borderRadius: BorderRadius.circular(15)), child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.grey)))); }
 
   Widget _buildBigStat({required BuildContext context, required String label, required double value, required Color color, required bool isRetro, required String suffix, Animation<double>? animation, int decimals = 2}) {
+    String valStr = value >= 1000 ? value.toStringAsFixed(0) : value.toStringAsFixed(decimals);
+    if (decimals == 1 && valStr.endsWith('.0')) valStr = valStr.replaceAll('.0', '');
+    
     Widget child = Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: isRetro ? Colors.white : Theme.of(context).cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.withValues(alpha: 0.1))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 5),
-          Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [Text(value >= 1000 ? value.toStringAsFixed(0) : value.toStringAsFixed(decimals), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)), if (suffix.isNotEmpty) Text(suffix, style: const TextStyle(fontSize: 14, color: Colors.grey))])
+          Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [Text(valStr, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)), if (suffix.isNotEmpty) Text(suffix, style: const TextStyle(fontSize: 14, color: Colors.grey))])
         ]));
     return animation != null ? ScaleTransition(scale: animation, child: child) : child;
   }
