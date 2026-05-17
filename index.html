@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="JUZY – Lohnt sich der Kauf? Berechne den Cost-per-Use vor dem Kauf und tracke den echten Wert deiner Sachen.">
-  <meta property="og:title" content="JUZY – Lohnt sich der Kauf?">
-  <meta property="og:description" content="Berechne in Sekunden ob ein Kauf wirklich sinnvoll ist. Cost-per-Use Rechner & Tracker.">
+  <meta name="description" content="JUZY – Is it worth buying? Calculate the cost per use before you buy and track the real value of your stuff.">
+  <meta property="og:title" content="JUZY – Is it worth buying?">
+  <meta property="og:description" content="Calculate in seconds whether a purchase is really worth it. Cost-per-use calculator & tracker.">
   <meta property="og:image" content="icons/Icon-512.png">
-  <title>JUZY – Lohnt sich der Kauf?</title>
+  <title>JUZY – Is it worth buying?</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <style>
@@ -105,45 +105,45 @@
 
   <nav>
     <div class="nav-logo">JUZY</div>
-    <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="nav-cta" target="_blank">📲 App laden</a>
+    <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="nav-cta" target="_blank">📲 Get the app</a>
   </nav>
 
   <section class="hero">
-    <div class="hero-badge">💡 Cost-per-Use Rechner</div>
-    <h1>Lohnt sich der<br><span>Kauf wirklich?</span></h1>
-    <p>Berechne in Sekunden ob ein Kauf sinnvoll ist — und tracke den echten Wert deiner Sachen über Zeit.</p>
+    <div class="hero-badge">💡 Cost-per-Use Calculator</div>
+    <h1>Is it really<br><span>worth buying?</span></h1>
+    <p>Calculate in seconds whether a purchase is worth it — and track the real value of your stuff over time.</p>
     <div class="hero-buttons">
-      <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="btn-primary" target="_blank">🛒 Kostenlos laden</a>
-      <a href="#rechner" class="btn-secondary">Rechner testen ↓</a>
+      <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="btn-primary" target="_blank">🛒 Download for free</a>
+      <a href="#rechner" class="btn-secondary">Try the calculator ↓</a>
     </div>
   </section>
 
   <section class="calc-section" id="rechner">
-    <h2>Probiere es aus</h2>
-    <p class="sub">Gib einen Preis ein und sieh sofort ob es sich lohnt.</p>
+    <h2>Try it out</h2>
+    <p class="sub">Enter a price and instantly see if it's worth it.</p>
     <div class="calc-card">
-      <div class="calc-label">Preis</div>
+      <div class="calc-label">Price</div>
       <div class="calc-price-row">
         <span class="calc-currency">€</span>
         <input class="calc-price-input" type="number" id="priceInput" placeholder="0" min="0" inputmode="decimal">
       </div>
 
-      <div class="calc-label">Wie oft wirst du es nutzen?</div>
+      <div class="calc-label">How often will you use it?</div>
       <div class="unit-chips" id="freqUnits">
-        <div class="chip" data-unit="0">Tag</div>
-        <div class="chip active" data-unit="1">Woche</div>
-        <div class="chip" data-unit="2">Monat</div>
-        <div class="chip" data-unit="3">Jahr</div>
+        <div class="chip" data-unit="0">Day</div>
+        <div class="chip active" data-unit="1">Week</div>
+        <div class="chip" data-unit="2">Month</div>
+        <div class="chip" data-unit="3">Year</div>
       </div>
       <div class="slider-row">
         <input type="range" id="freqSlider" min="1" max="7" value="3" step="1">
         <div class="slider-val" id="freqLabel">3× pro Woche</div>
       </div>
 
-      <div class="calc-label">Wie lange wirst du es behalten?</div>
+      <div class="calc-label">How long will you keep it?</div>
       <div class="unit-chips" id="lifespanUnits">
-        <div class="chip" data-unit="0">Monate</div>
-        <div class="chip active" data-unit="1">Jahre</div>
+        <div class="chip" data-unit="0">Months</div>
+        <div class="chip active" data-unit="1">Years</div>
       </div>
       <div class="slider-row">
         <input type="range" id="lifespanSlider" min="1" max="15" value="3" step="1">
@@ -151,8 +151,8 @@
       </div>
 
       <div class="result-card" id="resultCard">
-        <div class="result-label" id="resultLabel">KOSTEN PRO NUTZUNG</div>
-        <div class="result-placeholder" id="resultPlaceholder">Preis oben eingeben</div>
+        <div class="result-label" id="resultLabel">COST PER USE</div>
+        <div class="result-placeholder" id="resultPlaceholder">Enter a price above</div>
         <div id="resultContent" style="display:none">
           <div class="result-value" id="resultValue"></div>
           <div class="result-verdict" id="resultVerdict"></div>
@@ -163,49 +163,49 @@
   </section>
 
   <section class="features">
-    <h2>Mehr als nur ein Rechner</h2>
-    <p class="sub">JUZY hilft dir vor und nach dem Kauf.</p>
+    <h2>More than just a calculator</h2>
+    <p class="sub">JUZY helps you before and after you buy.</p>
     <div class="features-grid">
-      <div class="feature-card"><div class="feature-icon">🧮</div><h3>Vor-dem-Kauf Rechner</h3><p>Wähle Einheit + Häufigkeit und sieh sofort ob sich der Kauf lohnt — bevor du bezahlst.</p></div>
-      <div class="feature-card"><div class="feature-icon">📊</div><h3>Cost-per-Use Tracking</h3><p>Tracke wie oft du deine Sachen wirklich nutzt. JUZY zeigt den echten Preis pro Nutzung.</p></div>
-      <div class="feature-card"><div class="feature-icon">📷</div><h3>Barcode Scanner</h3><p>Scanne ein Produkt und JUZY füllt Name & Kategorie automatisch aus.</p></div>
-      <div class="feature-card"><div class="feature-icon">📈</div><h3>Statistiken</h3><p>Sieh welche Käufe sich gelohnt haben — deine besten und schlechtesten Investments.</p></div>
+      <div class="feature-card"><div class="feature-icon">🧮</div><h3>Pre-purchase Calculator</h3><p>Pick a unit + frequency and instantly see if the purchase is worth it — before you pay.</p></div>
+      <div class="feature-card"><div class="feature-icon">📊</div><h3>Cost-per-Use Tracking</h3><p>Track how often you actually use your stuff. JUZY shows you the real price per use.</p></div>
+      <div class="feature-card"><div class="feature-icon">📷</div><h3>Barcode Scanner</h3><p>Scan a product and JUZY auto-fills the name & category for you.</p></div>
+      <div class="feature-card"><div class="feature-icon">📈</div><h3>Statistics</h3><p>See which purchases paid off — your best and worst investments.</p></div>
     </div>
   </section>
 
   <section class="examples">
     <div class="examples-inner">
-      <h2>Echte Beispiele</h2>
-      <p class="sub">Was lohnt sich wirklich?</p>
+      <h2>Real examples</h2>
+      <p class="sub">What's actually worth it?</p>
       <div class="example-list">
         <div class="example-item">
-          <div class="example-left"><div class="example-emoji">🎸</div><div><div class="example-name">E-Gitarre — €349</div><div class="example-detail">1× pro Monat · 3 Jahre</div></div></div>
-          <div class="example-cpu cpu-bad">€9.69 / Nutz.</div>
+          <div class="example-left"><div class="example-emoji">🎸</div><div><div class="example-name">Electric Guitar — €349</div><div class="example-detail">1× per month · 3 years</div></div></div>
+          <div class="example-cpu cpu-bad">€9.69 / use</div>
         </div>
         <div class="example-item">
-          <div class="example-left"><div class="example-emoji">🎧</div><div><div class="example-name">Kopfhörer — €199</div><div class="example-detail">Täglich · 3 Jahre</div></div></div>
-          <div class="example-cpu cpu-great">€0.18 / Nutz.</div>
+          <div class="example-left"><div class="example-emoji">🎧</div><div><div class="example-name">Headphones — €199</div><div class="example-detail">Daily · 3 years</div></div></div>
+          <div class="example-cpu cpu-great">€0.18 / use</div>
         </div>
         <div class="example-item">
-          <div class="example-left"><div class="example-emoji">👟</div><div><div class="example-name">Sneaker — €120</div><div class="example-detail">3× pro Woche · 2 Jahre</div></div></div>
-          <div class="example-cpu cpu-great">€0.43 / Nutz.</div>
+          <div class="example-left"><div class="example-emoji">👟</div><div><div class="example-name">Sneakers — €120</div><div class="example-detail">3× per week · 2 years</div></div></div>
+          <div class="example-cpu cpu-great">€0.43 / use</div>
         </div>
         <div class="example-item">
-          <div class="example-left"><div class="example-emoji">🧳</div><div><div class="example-name">Koffer — €180</div><div class="example-detail">4× pro Jahr · 10 Jahre</div></div></div>
-          <div class="example-cpu cpu-good">€4.50 / Nutz.</div>
+          <div class="example-left"><div class="example-emoji">🧳</div><div><div class="example-name">Suitcase — €180</div><div class="example-detail">4× per year · 10 years</div></div></div>
+          <div class="example-cpu cpu-good">€4.50 / use</div>
         </div>
       </div>
     </div>
   </section>
 
   <section class="cta-section">
-    <h2>Kaufe smarter.<br>Bereue weniger.</h2>
-    <p>Kostenlos. Keine Werbung. Keine In-App-Käufe für Kernfunktionen.</p>
-    <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="btn-white" target="_blank">🛒 Jetzt kostenlos laden</a>
+    <h2>Buy smarter.<br>Regret less.</h2>
+    <p>Free. No ads. No paywalls for core features.</p>
+    <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="btn-white" target="_blank">🛒 Download for free now</a>
   </section>
 
   <footer>
-    <p>JUZY · <a href="mailto:chris61ds@gmail.com">Kontakt</a> · <a href="privacy.html">Datenschutz</a></p>
+    <p>JUZY · <a href="mailto:chris61ds@gmail.com">Contact</a> · <a href="privacy.html">Privacy</a></p>
   </footer>
 
   <script>
@@ -220,17 +220,17 @@
       return [freqCount*7, freqCount, freqCount/4.33, freqCount/52][freqUnit];
     }
     function lifespanMonths() { return lifespanUnit===0 ? lifespanCount : lifespanCount*12; }
-    function freqLabel() { return freqCount+'× '+['pro Tag','pro Woche','pro Monat','pro Jahr'][freqUnit]; }
+    function freqLabel() { return freqCount+'× '+['per day','per week','per month','per year'][freqUnit]; }
     function lifespanLabel() {
-      if(lifespanUnit===0) return lifespanCount+(lifespanCount===1?' Monat':' Monate');
-      return lifespanCount+(lifespanCount===1?' Jahr':' Jahre');
+      if(lifespanUnit===0) return lifespanCount+(lifespanCount===1?' month':' months');
+      return lifespanCount+(lifespanCount===1?' year':' years');
     }
     function setSliderBg(el) {
       const pct=((el.value-el.min)/(el.max-el.min)*100).toFixed(1)+'%';
       el.style.background=`linear-gradient(to right,var(--green) 0%,var(--green) ${pct},#e5e7eb ${pct})`;
     }
     function verdictColor(c) { return c<1?'#16a34a':c<5?'#4a9e8d':c<15?'#ea580c':'#dc2626'; }
-    function verdictText(c)  { return c<1?'✓ Super Wert':c<5?'✓ Guter Wert':c<15?'~ Überleg es dir':'✗ Wahrscheinlich nicht'; }
+    function verdictText(c)  { return c<1?'✓ Great value':c<5?'✓ Good value':c<15?'~ Think about it':'✗ Probably not worth it'; }
 
     function updateCalc() {
       document.getElementById('freqLabel').textContent = freqLabel();
