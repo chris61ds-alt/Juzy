@@ -1,38 +1,280 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="juzy_final">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="JUZY – Lohnt sich der Kauf? Berechne den Cost-per-Use vor dem Kauf und tracke den echten Wert deiner Sachen.">
+  <meta property="og:title" content="JUZY – Lohnt sich der Kauf?">
+  <meta property="og:description" content="Berechne in Sekunden ob ein Kauf wirklich sinnvoll ist. Cost-per-Use Rechner & Tracker.">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <title>JUZY – Lohnt sich der Kauf?</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --green: #6BB8A7;
+      --green-dark: #4a9e8d;
+      --green-light: #e8f5f2;
+      --text: #1a1a1a;
+      --text-muted: #6b7280;
+      --bg: #fafafa;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 16px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-logo { font-size: 22px; font-weight: 900; color: var(--green); letter-spacing: -0.5px; }
+    .nav-cta { background: var(--green); color: white; padding: 10px 20px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 14px; transition: background 0.2s; }
+    .nav-cta:hover { background: var(--green-dark); }
 
-  <title>juzy_final</title>
-  <link rel="manifest" href="manifest.json">
+    .hero { text-align: center; padding: 64px 24px 48px; max-width: 640px; margin: 0 auto; }
+    .hero-badge { display: inline-block; background: var(--green-light); color: var(--green-dark); padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 700; margin-bottom: 20px; }
+    .hero h1 { font-size: clamp(32px, 7vw, 52px); font-weight: 900; line-height: 1.1; margin-bottom: 16px; letter-spacing: -1px; }
+    .hero h1 span { color: var(--green); }
+    .hero p { font-size: 18px; color: var(--text-muted); margin-bottom: 36px; }
+    .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { background: var(--green); color: white; padding: 16px 32px; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.15s; box-shadow: 0 4px 20px rgba(107,184,167,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-secondary { background: white; color: var(--text); padding: 16px 28px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 16px; border: 2px solid var(--border); transition: border-color 0.2s, color 0.2s; }
+    .btn-secondary:hover { border-color: var(--green); color: var(--green); }
+
+    .calc-section { padding: 48px 24px; max-width: 480px; margin: 0 auto; }
+    .calc-section h2 { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .calc-section .sub { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 28px; }
+    .calc-card { background: white; border-radius: 24px; padding: 28px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .calc-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .calc-price-row { display: flex; align-items: center; gap: 8px; background: #f9fafb; border-radius: 14px; padding: 12px 18px; margin-bottom: 20px; border: 2px solid var(--border); }
+    .calc-currency { font-size: 28px; font-weight: 900; color: var(--green); opacity: 0.6; }
+    .calc-price-input { font-size: 36px; font-weight: 900; border: none; background: transparent; outline: none; width: 100%; color: var(--text); }
+    .calc-price-input::placeholder { color: #d1d5db; }
+
+    .unit-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .chip { padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #f9fafb; color: var(--text); transition: all 0.15s; user-select: none; }
+    .chip.active { background: var(--green); border-color: var(--green); color: white; }
+    .chip:hover:not(.active) { border-color: var(--green); color: var(--green); }
+
+    .slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .slider-row input[type=range] { flex: 1; height: 4px; -webkit-appearance: none; appearance: none; border-radius: 4px; outline: none; cursor: pointer; }
+    .slider-row input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--green); cursor: pointer; box-shadow: 0 2px 8px rgba(107,184,167,0.4); }
+    .slider-val { background: var(--green-light); color: var(--green-dark); padding: 5px 12px; border-radius: 50px; font-weight: 700; font-size: 13px; white-space: nowrap; min-width: 100px; text-align: center; }
+
+    .result-card { border-radius: 18px; padding: 20px; text-align: center; border: 1.5px solid rgba(107,184,167,0.3); background: var(--green-light); transition: all 0.3s; }
+    .result-label { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--green-dark); margin-bottom: 6px; transition: color 0.3s; }
+    .result-value { font-size: 52px; font-weight: 900; line-height: 1; margin-bottom: 4px; transition: color 0.3s; }
+    .result-verdict { font-size: 15px; font-weight: 700; margin-bottom: 8px; transition: color 0.3s; }
+    .result-formula { font-size: 11px; color: var(--text-muted); }
+    .result-placeholder { font-size: 16px; color: var(--text-muted); padding: 8px 0; }
+
+    .features { padding: 48px 24px; max-width: 900px; margin: 0 auto; }
+    .features h2 { text-align: center; font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+    .features .sub { text-align: center; color: var(--text-muted); margin-bottom: 36px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .feature-card { background: white; border-radius: var(--radius); padding: 24px; border: 1px solid var(--border); }
+    .feature-icon { font-size: 32px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+    .examples { background: white; padding: 48px 24px; }
+    .examples-inner { max-width: 700px; margin: 0 auto; }
+    .examples h2 { text-align: center; font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+    .examples .sub { text-align: center; color: var(--text-muted); margin-bottom: 28px; }
+    .example-list { display: flex; flex-direction: column; gap: 12px; }
+    .example-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg); }
+    .example-left { display: flex; align-items: center; gap: 12px; }
+    .example-emoji { font-size: 24px; }
+    .example-name { font-weight: 700; font-size: 14px; }
+    .example-detail { font-size: 12px; color: var(--text-muted); }
+    .example-cpu { font-size: 17px; font-weight: 900; padding: 4px 14px; border-radius: 50px; }
+    .cpu-great { color: #16a34a; background: #f0fdf4; }
+    .cpu-good  { color: var(--green-dark); background: var(--green-light); }
+    .cpu-bad   { color: #ea580c; background: #fff7ed; }
+
+    .cta-section { padding: 64px 24px; text-align: center; background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); color: white; }
+    .cta-section h2 { font-size: clamp(24px, 5vw, 38px); font-weight: 900; margin-bottom: 12px; }
+    .cta-section p { font-size: 16px; opacity: 0.85; margin-bottom: 32px; max-width: 400px; margin-left: auto; margin-right: auto; }
+    .btn-white { background: white; color: var(--green-dark); padding: 16px 36px; border-radius: 50px; text-decoration: none; font-weight: 800; font-size: 16px; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.15s; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+    .btn-white:hover { transform: translateY(-2px); }
+
+    footer { padding: 28px 24px; text-align: center; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); }
+    footer a { color: var(--green); text-decoration: none; }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+
+  <nav>
+    <div class="nav-logo">JUZY</div>
+    <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="nav-cta" target="_blank">📲 App laden</a>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge">💡 Cost-per-Use Rechner</div>
+    <h1>Lohnt sich der<br><span>Kauf wirklich?</span></h1>
+    <p>Berechne in Sekunden ob ein Kauf sinnvoll ist — und tracke den echten Wert deiner Sachen über Zeit.</p>
+    <div class="hero-buttons">
+      <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="btn-primary" target="_blank">🛒 Kostenlos laden</a>
+      <a href="#rechner" class="btn-secondary">Rechner testen ↓</a>
+    </div>
+  </section>
+
+  <section class="calc-section" id="rechner">
+    <h2>Probiere es aus</h2>
+    <p class="sub">Gib einen Preis ein und sieh sofort ob es sich lohnt.</p>
+    <div class="calc-card">
+      <div class="calc-label">Preis</div>
+      <div class="calc-price-row">
+        <span class="calc-currency">€</span>
+        <input class="calc-price-input" type="number" id="priceInput" placeholder="0" min="0" inputmode="decimal">
+      </div>
+
+      <div class="calc-label">Wie oft wirst du es nutzen?</div>
+      <div class="unit-chips" id="freqUnits">
+        <div class="chip" data-unit="0">Tag</div>
+        <div class="chip active" data-unit="1">Woche</div>
+        <div class="chip" data-unit="2">Monat</div>
+        <div class="chip" data-unit="3">Jahr</div>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="freqSlider" min="1" max="7" value="3" step="1">
+        <div class="slider-val" id="freqLabel">3× pro Woche</div>
+      </div>
+
+      <div class="calc-label">Wie lange wirst du es behalten?</div>
+      <div class="unit-chips" id="lifespanUnits">
+        <div class="chip" data-unit="0">Monate</div>
+        <div class="chip active" data-unit="1">Jahre</div>
+      </div>
+      <div class="slider-row">
+        <input type="range" id="lifespanSlider" min="1" max="15" value="3" step="1">
+        <div class="slider-val" id="lifespanLabel">3 Jahre</div>
+      </div>
+
+      <div class="result-card" id="resultCard">
+        <div class="result-label" id="resultLabel">KOSTEN PRO NUTZUNG</div>
+        <div class="result-placeholder" id="resultPlaceholder">Preis oben eingeben</div>
+        <div id="resultContent" style="display:none">
+          <div class="result-value" id="resultValue"></div>
+          <div class="result-verdict" id="resultVerdict"></div>
+          <div class="result-formula" id="resultFormula"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2>Mehr als nur ein Rechner</h2>
+    <p class="sub">JUZY hilft dir vor und nach dem Kauf.</p>
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon">🧮</div><h3>Vor-dem-Kauf Rechner</h3><p>Wähle Einheit + Häufigkeit und sieh sofort ob sich der Kauf lohnt — bevor du bezahlst.</p></div>
+      <div class="feature-card"><div class="feature-icon">📊</div><h3>Cost-per-Use Tracking</h3><p>Tracke wie oft du deine Sachen wirklich nutzt. JUZY zeigt den echten Preis pro Nutzung.</p></div>
+      <div class="feature-card"><div class="feature-icon">📷</div><h3>Barcode Scanner</h3><p>Scanne ein Produkt und JUZY füllt Name & Kategorie automatisch aus.</p></div>
+      <div class="feature-card"><div class="feature-icon">📈</div><h3>Statistiken</h3><p>Sieh welche Käufe sich gelohnt haben — deine besten und schlechtesten Investments.</p></div>
+    </div>
+  </section>
+
+  <section class="examples">
+    <div class="examples-inner">
+      <h2>Echte Beispiele</h2>
+      <p class="sub">Was lohnt sich wirklich?</p>
+      <div class="example-list">
+        <div class="example-item">
+          <div class="example-left"><div class="example-emoji">🎸</div><div><div class="example-name">E-Gitarre — €349</div><div class="example-detail">1× pro Monat · 3 Jahre</div></div></div>
+          <div class="example-cpu cpu-bad">€9.69 / Nutz.</div>
+        </div>
+        <div class="example-item">
+          <div class="example-left"><div class="example-emoji">🎧</div><div><div class="example-name">Kopfhörer — €199</div><div class="example-detail">Täglich · 3 Jahre</div></div></div>
+          <div class="example-cpu cpu-great">€0.18 / Nutz.</div>
+        </div>
+        <div class="example-item">
+          <div class="example-left"><div class="example-emoji">👟</div><div><div class="example-name">Sneaker — €120</div><div class="example-detail">3× pro Woche · 2 Jahre</div></div></div>
+          <div class="example-cpu cpu-great">€0.43 / Nutz.</div>
+        </div>
+        <div class="example-item">
+          <div class="example-left"><div class="example-emoji">🧳</div><div><div class="example-name">Koffer — €180</div><div class="example-detail">4× pro Jahr · 10 Jahre</div></div></div>
+          <div class="example-cpu cpu-good">€4.50 / Nutz.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>Kaufe smarter.<br>Bereue weniger.</h2>
+    <p>Kostenlos. Keine Werbung. Keine In-App-Käufe für Kernfunktionen.</p>
+    <a href="https://play.google.com/store/apps/details?id=com.vascodasoda.juzy" class="btn-white" target="_blank">🛒 Jetzt kostenlos laden</a>
+  </section>
+
+  <footer>
+    <p>JUZY · <a href="mailto:chris61ds@gmail.com">Kontakt</a> · <a href="https://chris61ds-alt.github.io/Juzy/privacy.html">Datenschutz</a></p>
+  </footer>
+
+  <script>
+    let freqUnit = 1, freqCount = 3;
+    let lifespanUnit = 1, lifespanCount = 3;
+    const freqMaxPerUnit = [5,7,10,52];
+    const freqDefaultPerUnit = [1,3,2,12];
+    const lifespanMaxPerUnit = [24,15];
+    const lifespanDefaultPerUnit = [12,3];
+
+    function usesPerWeek() {
+      return [freqCount*7, freqCount, freqCount/4.33, freqCount/52][freqUnit];
+    }
+    function lifespanMonths() { return lifespanUnit===0 ? lifespanCount : lifespanCount*12; }
+    function freqLabel() { return freqCount+'× '+['pro Tag','pro Woche','pro Monat','pro Jahr'][freqUnit]; }
+    function lifespanLabel() {
+      if(lifespanUnit===0) return lifespanCount+(lifespanCount===1?' Monat':' Monate');
+      return lifespanCount+(lifespanCount===1?' Jahr':' Jahre');
+    }
+
+    function setSliderBg(el) {
+      const pct=((el.value-el.min)/(el.max-el.min)*100).toFixed(1)+'%';
+      el.style.background=`linear-gradient(to right,var(--green) 0%,var(--green) ${pct},#e5e7eb ${pct})`;
+    }
+
+    function verdictColor(c) { return c<1?'#16a34a':c<5?'#4a9e8d':c<15?'#ea580c':'#dc2626'; }
+    function verdictText(c)  { return c<1?'✓ Super Wert':c<5?'✓ Guter Wert':c<15?'~ Überleg es dir':'✗ Wahrscheinlich nicht'; }
+
+    function updateCalc() {
+      document.getElementById('freqLabel').textContent = freqLabel();
+      document.getElementById('lifespanLabel').textContent = lifespanLabel();
+      const price = parseFloat(document.getElementById('priceInput').value)||0;
+      const ph = document.getElementById('resultPlaceholder');
+      const ct = document.getElementById('resultContent');
+      const card = document.getElementById('resultCard');
+      if(price<=0){ ph.style.display='block'; ct.style.display='none'; card.style.background='var(--green-light)'; card.style.borderColor='rgba(107,184,167,0.3)'; return; }
+      const total = Math.round(usesPerWeek()*4.33*lifespanMonths());
+      const cpu = total>0 ? price/total : 0;
+      const col = verdictColor(cpu);
+      ph.style.display='none'; ct.style.display='block';
+      card.style.background=col+'12'; card.style.borderColor=col+'44';
+      document.getElementById('resultLabel').style.color=col;
+      document.getElementById('resultValue').textContent='€'+(cpu<10?cpu.toFixed(2):cpu.toFixed(1));
+      document.getElementById('resultValue').style.color=col;
+      document.getElementById('resultVerdict').textContent=verdictText(cpu);
+      document.getElementById('resultVerdict').style.color=col;
+      document.getElementById('resultFormula').textContent=
+        '€'+price.toFixed(0)+' ÷ '+total+'× = €'+cpu.toFixed(2)+' / Nutzung  ·  '+freqLabel()+' × '+lifespanLabel();
+    }
+
+    document.querySelectorAll('#freqUnits .chip').forEach(c=>c.addEventListener('click',()=>{
+      freqUnit=parseInt(c.dataset.unit); freqCount=freqDefaultPerUnit[freqUnit];
+      document.querySelectorAll('#freqUnits .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active');
+      const s=document.getElementById('freqSlider'); s.max=freqMaxPerUnit[freqUnit]; s.value=freqCount; setSliderBg(s); updateCalc();
+    }));
+    document.querySelectorAll('#lifespanUnits .chip').forEach(c=>c.addEventListener('click',()=>{
+      lifespanUnit=parseInt(c.dataset.unit); lifespanCount=lifespanDefaultPerUnit[lifespanUnit];
+      document.querySelectorAll('#lifespanUnits .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active');
+      const s=document.getElementById('lifespanSlider'); s.max=lifespanMaxPerUnit[lifespanUnit]; s.value=lifespanCount; setSliderBg(s); updateCalc();
+    }));
+
+    const fs=document.getElementById('freqSlider');
+    fs.addEventListener('input',()=>{ freqCount=parseInt(fs.value); setSliderBg(fs); updateCalc(); });
+    const ls=document.getElementById('lifespanSlider');
+    ls.addEventListener('input',()=>{ lifespanCount=parseInt(ls.value); setSliderBg(ls); updateCalc(); });
+    document.getElementById('priceInput').addEventListener('input',updateCalc);
+
+    setSliderBg(fs); setSliderBg(ls); updateCalc();
+  </script>
 </body>
 </html>
